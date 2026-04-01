@@ -5,6 +5,17 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useLocation, useParams } from "wouter";
 
+const asArray = <T,>(value: unknown): T[] => Array.isArray(value) ? (value as T[]) : [];
+const asNumber = (value: unknown) => Number(value ?? 0);
+const asText = (value: unknown, fallback = "—") => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : fallback;
+  }
+  if (value === null || value === undefined) return fallback;
+  return String(value);
+};
+
 function QRCodeCard({ bill }: { bill: any }) {
   const { data: qrData } = trpc.bills.qrCode.useQuery(
     { billId: bill.id, promptPayId: bill.promptPayId },
@@ -146,7 +157,11 @@ function EditBillModal({ bill, onClose }: { bill: any; onClose: () => void }) {
 export default function BillDetail() {
   const params = useParams<{ id: string }>();
   const [, navigate] = useLocation();
-  const { data: bill, isLoading } = trpc.bills.getById.useQuery({ id: parseInt(params.id) });
+  const billId = Number.parseInt(params.id ?? "", 10);
+  const { data: bill, isLoading } = trpc.bills.getById.useQuery(
+    { id: billId },
+    { enabled: Number.isFinite(billId) }
+  );
   const [showPayment, setShowPayment] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
 
@@ -158,7 +173,7 @@ export default function BillDetail() {
     );
   }
 
-  if (!bill) {
+  if (!Number.isFinite(billId) || !bill) {
     return (
       <DashboardLayout>
         <div className="brut-card text-center py-16">
@@ -170,7 +185,13 @@ export default function BillDetail() {
     );
   }
 
-  const remaining = Number(bill.totalAmount) - Number(bill.paidAmount);
+  const items = asArray<any>(bill.items);
+  const payments = asArray<any>(bill.payments);
+  const editHistory = asArray<any>(bill.editHistory);
+  const status = typeof bill.status === "string" && bill.status in statusLabel ? bill.status : "unpaid";
+  const totalAmount = asNumber(bill.totalAmount);
+  const paidAmount = asNumber(bill.paidAmount);
+  const remaining = totalAmount - paidAmount;
 
   return (
     <DashboardLayout>
@@ -180,9 +201,9 @@ export default function BillDetail() {
         </button>
         <div>
           <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground">— บิล</div>
-          <h1 className="text-3xl font-black uppercase tracking-tighter">{bill.billNumber}</h1>
+          <h1 className="text-3xl font-black uppercase tracking-tighter">{asText(bill.billNumber, "BILL")}</h1>
         </div>
-        <span className={`badge-${bill.status} ml-2`}>{statusLabel[bill.status]}</span>
+        <span className={`badge-${status} ml-2`}>{statusLabel[status]}</span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -191,9 +212,9 @@ export default function BillDetail() {
           <div className="brut-card">
             <div className="text-xs font-mono font-bold uppercase tracking-widest mb-4 border-l-4 border-black pl-3">ข้อมูลบิล</div>
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <div><span className="text-muted-foreground font-mono text-xs uppercase">ห้อง</span><div className="font-black text-lg">{bill.room?.roomNumber}</div></div>
-              <div><span className="text-muted-foreground font-mono text-xs uppercase">ผู้เช่า</span><div className="font-bold">{bill.tenant ? `${bill.tenant.firstName} ${bill.tenant.lastName}` : "—"}</div></div>
-              <div><span className="text-muted-foreground font-mono text-xs uppercase">รอบบิล</span><div className="font-bold font-mono">{bill.billingPeriod}</div></div>
+              <div><span className="text-muted-foreground font-mono text-xs uppercase">ห้อง</span><div className="font-black text-lg">{asText(bill.room?.roomNumber)}</div></div>
+              <div><span className="text-muted-foreground font-mono text-xs uppercase">ผู้เช่า</span><div className="font-bold">{bill.tenant ? `${asText(bill.tenant.firstName, "")} ${asText(bill.tenant.lastName, "")}`.trim() || "—" : "—"}</div></div>
+              <div><span className="text-muted-foreground font-mono text-xs uppercase">รอบบิล</span><div className="font-bold font-mono">{asText(bill.billingPeriod)}</div></div>
               <div><span className="text-muted-foreground font-mono text-xs uppercase">วันครบกำหนด</span><div className="font-bold font-mono">{bill.dueDate ? String(bill.dueDate).split("T")[0] : "—"}</div></div>
             </div>
           </div>
@@ -237,10 +258,10 @@ export default function BillDetail() {
                 </tr>
               </thead>
               <tbody>
-                {bill.items?.map((item: any, i: number) => (
+                {items.map((item: any, i: number) => (
                   <tr key={i} className="border-b border-gray-200">
-                    <td className="py-2">{item.description}</td>
-                    <td className="py-2 text-right font-mono font-bold">฿{Number(item.amount).toLocaleString()}</td>
+                    <td className="py-2">{asText(item?.description)}</td>
+                    <td className="py-2 text-right font-mono font-bold">฿{asNumber(item?.amount).toLocaleString()}</td>
                   </tr>
                 ))}
                 {Number(bill.discount) > 0 && (
@@ -259,18 +280,18 @@ export default function BillDetail() {
               <tfoot>
                 <tr className="border-t-4 border-black">
                   <td className="py-3 font-black uppercase">รวมทั้งหมด</td>
-                  <td className="py-3 text-right font-black text-2xl">฿{Number(bill.totalAmount).toLocaleString()}</td>
+                  <td className="py-3 text-right font-black text-2xl">฿{totalAmount.toLocaleString()}</td>
                 </tr>
               </tfoot>
             </table>
           </div>
 
           {/* Payment history */}
-          {bill.payments && bill.payments.length > 0 && (
+          {payments.length > 0 && (
             <div className="brut-card">
               <div className="text-xs font-mono font-bold uppercase tracking-widest mb-4 border-l-4 border-black pl-3">ประวัติการชำระ</div>
               <div className="space-y-2">
-                {bill.payments.map((p: any) => (
+                {payments.map((p: any) => (
                   <div key={p.id} className="flex items-center justify-between py-2 border-b border-gray-200">
                     <div>
                       <div className="text-sm font-bold">{p.paymentMethod === "cash" ? "เงินสด" : p.paymentMethod === "transfer" ? "โอนเงิน" : p.paymentMethod}</div>
@@ -284,14 +305,14 @@ export default function BillDetail() {
           )}
 
           {/* Edit history */}
-          {bill.editHistory && bill.editHistory.length > 0 && (
+          {editHistory.length > 0 && (
             <div className="brut-card">
               <div className="text-xs font-mono font-bold uppercase tracking-widest mb-4 border-l-4 border-black pl-3">ประวัติการแก้ไข</div>
               <div className="space-y-2">
-                {bill.editHistory.map((h: any, i: number) => (
+                {editHistory.map((h: any, i: number) => (
                   <div key={i} className="py-2 border-b border-gray-200 text-sm">
-                    <div className="font-bold">{h.editReason}</div>
-                    <div className="text-xs font-mono text-muted-foreground">{String(h.editedAt)} — {h.fieldChanged}: {h.oldValue} → {h.newValue}</div>
+                    <div className="font-bold">{asText(h.editReason)}</div>
+                    <div className="text-xs font-mono text-muted-foreground">{asText(h.editedAt ?? h.createdAt)} — {asText(h.fieldChanged)}: {asText(h.oldValue, "")} → {asText(h.newValue, "")}</div>
                   </div>
                 ))}
               </div>
@@ -310,8 +331,8 @@ export default function BillDetail() {
           <div className="brut-card">
             <div className="text-xs font-mono font-bold uppercase tracking-widest mb-3">สรุปการชำระ</div>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">ยอดรวม</span><span className="font-bold">฿{Number(bill.totalAmount).toLocaleString()}</span></div>
-              <div className="flex justify-between text-green-700"><span>ชำระแล้ว</span><span className="font-bold">฿{Number(bill.paidAmount).toLocaleString()}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">ยอดรวม</span><span className="font-bold">฿{totalAmount.toLocaleString()}</span></div>
+              <div className="flex justify-between text-green-700"><span>ชำระแล้ว</span><span className="font-bold">฿{paidAmount.toLocaleString()}</span></div>
               <div className="flex justify-between border-t-2 border-black pt-2"><span className="font-black">คงค้าง</span><span className="font-black text-xl">{remaining > 0 ? `฿${remaining.toLocaleString()}` : "ชำระครบแล้ว ✓"}</span></div>
             </div>
           </div>
@@ -338,7 +359,7 @@ export default function BillDetail() {
           {bill.notes && (
             <div className="brut-card">
               <div className="text-xs font-mono font-bold uppercase tracking-widest mb-2">หมายเหตุ</div>
-              <div className="text-sm text-muted-foreground">{bill.notes}</div>
+              <div className="text-sm text-muted-foreground">{asText(bill.notes)}</div>
             </div>
           )}
         </div>

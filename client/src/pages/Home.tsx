@@ -1,7 +1,8 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import BrandMark from "@/components/BrandMark";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { Building2, ChevronRight, FolderClosed, Gauge, Key, Receipt, Shield, Users, Zap } from "lucide-react";
+import { Building2, ChevronRight, Gauge, Key, Receipt, Shield, Users, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -45,42 +46,43 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-5xl font-black animate-pulse tracking-tighter">หอพักโปร</div>
+        <div className="flex items-center gap-4 rounded-full border border-black/10 bg-white px-6 py-4 shadow-[0_18px_50px_rgba(0,0,0,0.08)]">
+          <BrandMark size="md" />
+          <div className="text-4xl font-black tracking-tighter">หอพักโปร</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.05),transparent_30%),linear-gradient(180deg,#fcfcfc_0%,#f5f5f5_100%)] flex flex-col">
       {/* Hero */}
       <div className="flex-1 flex flex-col lg:flex-row">
-        {/* Left: Big text block + Login buttons */}
-        <div className="flex-1 p-8 lg:p-16 flex flex-col justify-center border-r-0 lg:border-r-4 border-black">
+      {/* Left: Big text block + Login buttons */}
+        <div className="flex-1 p-8 lg:p-16 flex flex-col justify-center border-r-0 lg:border-r border-black/10">
           <div className="max-w-xl">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 border-2 border-black flex items-center justify-center bg-white">
-                <FolderClosed className="w-7 h-7 text-black" />
-              </div>
-              <div className="text-xs font-mono font-bold uppercase tracking-widest text-muted-foreground border-l-4 border-black pl-4">
+            <div className="flex items-center gap-4 mb-8">
+              <BrandMark size="lg" />
+              <div className="text-xs font-mono font-bold uppercase tracking-[0.25em] text-muted-foreground border-l border-black/15 pl-4">
                 ระบบจัดการหอพัก / อพาร์ทเม้นท์
               </div>
             </div>
-            <h1 className="text-7xl lg:text-9xl font-black leading-none tracking-tighter mb-8">
+            <h1 className="text-6xl lg:text-8xl font-black leading-none tracking-tighter mb-6">
               หอพัก<br />
-              <span className="text-black/20">โปร</span>
+              <span className="text-[#d7b56d]">โปร</span>
             </h1>
-            <p className="text-lg font-medium text-muted-foreground mb-10 max-w-md leading-relaxed">
+            <p className="text-lg font-medium text-muted-foreground mb-10 max-w-lg leading-relaxed">
               บริหารหอพักและอพาร์ทเม้นท์แบบครบวงจร จัดการห้อง ผู้เช่า บิล และมิเตอร์ในที่เดียว
             </p>
 
             {/* ── Login Section: 2 Groups ── */}
             <div className="space-y-6">
-              <div className="text-xs font-mono font-bold uppercase tracking-widest text-muted-foreground border-l-4 border-black pl-3">
+              <div className="text-xs font-mono font-bold uppercase tracking-[0.25em] text-muted-foreground border-l border-black/15 pl-3">
                 เลือกเข้าสู่ระบบ
               </div>
 
               {bootstrapStatus.data?.canCreateFirstAdmin && (
-                <div className="border-4 border-black p-4 bg-yellow-50 space-y-3">
+                <div className="rounded-[28px] border border-black/10 p-5 bg-white/95 backdrop-blur-sm space-y-3 shadow-[0_18px_40px_rgba(0,0,0,0.06)]">
                   <div className="text-xs font-mono font-bold uppercase tracking-widest">ตั้งค่าแอดมินครั้งแรก</div>
                   <div className="grid grid-cols-1 gap-3">
                     <input
@@ -115,7 +117,7 @@ export default function Home() {
                 </div>
               )}
 
-              <div className="border-4 border-black p-4 bg-gray-50 space-y-3">
+              <div className="rounded-[28px] border border-black/10 p-5 bg-white/95 backdrop-blur-sm space-y-3 shadow-[0_18px_40px_rgba(0,0,0,0.06)]">
                 <div className="text-xs font-mono font-bold uppercase tracking-widest">เข้าสู่ระบบด้วยบัญชีหอพัก</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <input
@@ -153,11 +155,11 @@ export default function Home() {
                     toast.error("ยังไม่ได้ตั้งค่า OAuth login");
                   }}
                   disabled={!adminLoginUrl}
-                  className="group relative border-4 border-black p-6 text-left hover:bg-black hover:text-white transition-all"
-                  style={{ boxShadow: "6px 6px 0px rgba(0,0,0,0.3)" }}
+                  className="group relative rounded-[28px] border border-black/10 bg-white p-6 text-left hover:bg-black hover:text-white transition-all duration-200"
+                  style={{ boxShadow: "0 18px 40px rgba(0,0,0,0.08)" }}
                 >
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 border-2 border-current flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-2xl border border-current flex items-center justify-center">
                       <Shield className="w-6 h-6" />
                     </div>
                     <div>
@@ -185,11 +187,11 @@ export default function Home() {
                     toast.error("ยังไม่ได้ตั้งค่า OAuth login");
                   }}
                   disabled={!tenantLoginUrl}
-                  className="group relative border-4 border-black/40 p-6 text-left hover:border-black hover:bg-black hover:text-white transition-all"
-                  style={{ boxShadow: "6px 6px 0px rgba(0,0,0,0.15)" }}
+                  className="group relative rounded-[28px] border border-black/10 bg-white p-6 text-left hover:border-black hover:bg-black hover:text-white transition-all duration-200"
+                  style={{ boxShadow: "0 18px 40px rgba(0,0,0,0.08)" }}
                 >
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 border-2 border-current flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-2xl border border-current flex items-center justify-center">
                       <Key className="w-6 h-6" />
                     </div>
                     <div>
@@ -212,7 +214,14 @@ export default function Home() {
         </div>
 
         {/* Right: Feature cards */}
-        <div className="lg:w-96 p-8 lg:p-12 flex flex-col justify-center gap-6 bg-black text-white">
+        <div className="lg:w-[28rem] p-8 lg:p-12 flex flex-col justify-center gap-6 bg-black text-white">
+          <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-3 w-fit">
+            <BrandMark size="sm" inverted />
+            <div>
+              <div className="text-sm font-black tracking-tight">Minimal Black</div>
+              <div className="text-[11px] font-mono uppercase tracking-[0.25em] text-[#d7b56d]">Dormitory OS</div>
+            </div>
+          </div>
           <div className="text-xs font-mono uppercase tracking-widest text-white/40 mb-2">
             — ฟีเจอร์หลัก
           </div>
@@ -223,9 +232,9 @@ export default function Home() {
             { icon: Gauge, title: "มิเตอร์น้ำ/ไฟ", desc: "บันทึกมิเตอร์ OCR อัตโนมัติ" },
             { icon: Zap, title: "ค่าน้ำเหมาจ่าย", desc: "เลือกคิดตามมิเตอร์หรือเหมาจ่าย" },
           ].map((f) => (
-            <div key={f.title} className="border-2 border-white/20 p-5 hover:border-white transition-all">
+            <div key={f.title} className="rounded-[24px] border border-white/15 bg-white/[0.03] p-5 hover:border-white/35 transition-all duration-200">
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 border-2 border-white/40 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-2xl border border-white/20 flex items-center justify-center shrink-0 bg-white/[0.04]">
                   <f.icon className="w-5 h-5" />
                 </div>
                 <div>
@@ -236,20 +245,20 @@ export default function Home() {
             </div>
           ))}
 
-          <div className="mt-4 border-t-2 border-white/20 pt-4">
+          <div className="mt-4 border-t border-white/10 pt-4">
             <div className="text-xs font-mono text-white/40 uppercase tracking-widest">
               รองรับ 2 ฝั่ง
             </div>
             <div className="flex gap-3 mt-2">
-              <span className="px-3 py-1 border-2 border-white text-xs font-black uppercase">เจ้าของ</span>
-              <span className="px-3 py-1 border-2 border-white/40 text-xs font-black uppercase text-white/60">ผู้เช่า</span>
+              <span className="px-3 py-1 rounded-full border border-white text-xs font-black uppercase">เจ้าของ</span>
+              <span className="px-3 py-1 rounded-full border border-white/30 text-xs font-black uppercase text-white/60">ผู้เช่า</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="border-t-4 border-black px-8 py-4 flex items-center justify-between">
+      <div className="border-t border-black/10 px-8 py-4 flex items-center justify-between bg-white/70 backdrop-blur-sm">
         <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">หอพักโปร © 2025</span>
         <span className="text-xs font-mono text-muted-foreground">v1.0</span>
       </div>

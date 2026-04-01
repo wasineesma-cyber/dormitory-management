@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import BrandMark from "@/components/BrandMark";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { Building2, FileText, Gauge, Home, LogOut, Menu, Package, Receipt, Settings, Users, X } from "lucide-react";
@@ -59,9 +60,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const NavContent = () => (
     <>
-      <div className="p-6 border-b-4 border-white/20">
-        <div className="text-2xl font-black uppercase tracking-tighter leading-none">
-          หอพัก<span className="text-white/60">โปร</span>
+      <div className="p-6 border-b border-white/10">
+        <div className="flex items-center gap-3">
+          <BrandMark size="sm" inverted />
+          <div>
+            <div className="text-2xl font-black tracking-tighter leading-none">
+              หอพัก<span className="text-[#d7b56d]">โปร</span>
+            </div>
+            <div className="text-[11px] font-mono text-[#d7b56d] uppercase tracking-[0.25em] mt-1">
+              Minimal Black
+            </div>
+          </div>
         </div>
         {dormName && (
           <div className="text-sm font-bold text-white/80 mt-1 truncate">{dormName}</div>
@@ -79,10 +88,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <button
               key={item.path}
               onClick={() => { navigate(item.path); setMobileOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold uppercase tracking-wide transition-all border-l-4 ${
+              className={`w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold uppercase tracking-wide transition-all ${
                 isActive
-                  ? "bg-white/10 border-white text-white"
-                  : "border-transparent text-white/70 hover:bg-white/5 hover:text-white hover:border-white/40"
+                  ? "bg-white text-black shadow-[0_12px_24px_rgba(255,255,255,0.08)]"
+                  : "text-white/70 hover:bg-white/6 hover:text-white"
               }`}
             >
               <Icon className="w-4 h-4 shrink-0" />
@@ -92,19 +101,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         })}
       </nav>
 
-      <div className="p-4 border-t-4 border-white/20">
+      <div className="p-4 border-t border-white/10">
         <div className="mb-3 px-2">
           <div className="text-xs font-mono text-white/40 uppercase tracking-widest">ผู้ใช้งาน</div>
           <div className="text-sm font-bold truncate text-white mt-1">{user?.name || user?.email || "User"}</div>
           {isAdmin && (
-            <span className="text-xs font-black uppercase mt-1 inline-block px-2 py-0.5 bg-white text-black">
+            <span className="text-xs font-black uppercase mt-1 inline-block rounded-full px-2.5 py-1 bg-white text-black">
               ADMIN
             </span>
           )}
         </div>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2 px-4 py-2 text-sm font-bold uppercase border-2 border-white/30 text-white/70 hover:border-white hover:text-white transition-all"
+          className="w-full flex items-center justify-center gap-2 rounded-full border border-white/20 px-4 py-2.5 text-sm font-bold uppercase text-white/80 hover:border-white hover:text-white transition-all"
         >
           <LogOut className="w-4 h-4" />
           ออกจากระบบ
@@ -116,7 +125,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-64 bg-black text-white flex-col shrink-0 border-r-4 border-black">
+      <aside className="hidden lg:flex w-72 bg-black text-white flex-col shrink-0 border-r border-white/10 shadow-[16px_0_40px_rgba(0,0,0,0.08)]">
         <NavContent />
       </aside>
 
@@ -124,7 +133,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute left-0 top-0 bottom-0 w-64 bg-black text-white flex flex-col border-r-4 border-black">
+          <aside className="absolute left-0 top-0 bottom-0 w-72 bg-black text-white flex flex-col border-r border-white/10">
             <button
               onClick={() => setMobileOpen(false)}
               className="absolute top-4 right-4 text-white/70 hover:text-white"
@@ -139,11 +148,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile header */}
-        <div className="lg:hidden flex items-center gap-4 px-4 py-3 border-b-4 border-black bg-black text-white">
+        <div className="lg:hidden flex items-center gap-4 px-4 py-3 border-b border-black/10 bg-white/85 backdrop-blur-sm text-black">
           <button onClick={() => setMobileOpen(true)}>
             <Menu className="w-6 h-6" />
           </button>
-          <span className="text-lg font-black uppercase tracking-tight">HORPAKMAX</span>
+          <div className="flex items-center gap-3">
+            <BrandMark size="sm" />
+            <span className="text-lg font-black tracking-tight">หอพักโปร</span>
+          </div>
         </div>
 
         <main className="flex-1 overflow-auto p-4 lg:p-8">
