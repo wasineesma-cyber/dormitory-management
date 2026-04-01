@@ -106,11 +106,18 @@ export function registerPdfRoutes(app: Router) {
       doc.pipe(res);
 
       try {
-        // Header
-        doc.fontSize(28).font(fontName(true)).text("HORPAKMAX", 50, 50);
-        doc.fontSize(10).font(fontName()).text("ระบบจัดการหอพัก", 50, 82);
-        doc.moveTo(50, 100).lineTo(545, 100).lineWidth(3).stroke();
+        // settings
+        const dormName = await db.getSetting(bill.houseId, "dormitory_name") || "ใบแจ้งหนี้หอพัก";
+        const dormAddr = await db.getSetting(bill.houseId, "dormitory_address");
 
+        // Header
+        doc.fontSize(24).font(fontName(true)).text(dormName, 50, 45);
+        if (dormAddr) {
+          doc.fontSize(10).font(fontName()).text(dormAddr, 50, 75, { width: 400 });
+          doc.moveTo(50, 105).lineTo(545, 105).lineWidth(2).stroke();
+        } else {
+          doc.moveTo(50, 85).lineTo(545, 85).lineWidth(2).stroke();
+        }
 
         // Bill info
         doc.fontSize(20).font(fontName(true)).text("ใบแจ้งหนี้", 50, 120);

@@ -417,7 +417,15 @@ export const appRouter = router({
       status: z.string().optional(),
       roomId: z.number().optional(),
       tenantId: z.number().optional(),
-    }).optional()).query(({ input, ctx }) => db.getBills({ ...input, houseId: ctx.user.houseId ?? undefined })),
+    }).optional()).query(async ({ input, ctx }) => {
+      let extraFilters: { tenantId?: number } = {};
+      if (ctx.user.role === 'user') {
+        const tenant = await db.getTenantByUserId(ctx.user.id);
+        if (!tenant) return [];
+        extraFilters.tenantId = tenant.id;
+      }
+      return db.getBills({ ...input, ...extraFilters, houseId: ctx.user.houseId ?? undefined });
+    }),
     byId: protectedProcedure.input(z.object({ id: z.number() })).query(async ({ input, ctx }) => {
       const bill = await db.getBillById(input.id);
       if (!bill) throw new TRPCError({ code: "NOT_FOUND" });
