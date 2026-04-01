@@ -1,6 +1,6 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, CheckCircle, Download, Edit2, Printer, X } from "lucide-react";
+import { ArrowLeft, CheckCircle, Download, Edit2, Printer, X, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useLocation, useParams } from "wouter";
