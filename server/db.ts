@@ -496,6 +496,15 @@ export async function getAllBillEditHistory() {
   return db.select().from(billEditHistory).orderBy(desc(billEditHistory.createdAt)).limit(200);
 }
 
+export async function deleteBill(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(billItems).where(eq(billItems.billId, id));
+  await db.delete(billEditHistory).where(eq(billEditHistory.billId, id));
+  await db.delete(payments).where(eq(payments.billId, id));
+  await db.delete(bills).where(eq(bills.id, id));
+}
+
 // ─── Payments ─────────────────────────────────────────────────────────────────
 
 export async function getPaymentsByBill(billId: number) {

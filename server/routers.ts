@@ -173,7 +173,7 @@ export const appRouter = router({
         cleaned[k] = v === "" ? null : v;
       }
       cleaned.houseId = requireHouseId(ctx.user);
-      
+
       return db.createRoom(cleaned as any);
     }),
     update: adminProcedure.input(z.object({
@@ -585,12 +585,15 @@ export const appRouter = router({
       discount: z.string().optional(),
       penalty: z.string().optional(),
       dueDate: z.string().optional(),
+      promptPayId: z.string().optional(),
       notes: z.string().optional(),
       editReason: z.string(),
     })).mutation(async ({ input, ctx }) => {
       const { billId, editReason, ...data } = input;
       const bill = await db.getBillById(billId);
       if (!bill) throw new TRPCError({ code: 'NOT_FOUND' });
+      // Validate promptPayId: treat empty string as null update to drop it
+      if (data.promptPayId === "") (data as any).promptPayId = null;
       const rent = parseFloat(data.rentAmount ?? String(bill.rentAmount) ?? '0');
       const water = parseFloat(data.waterAmount ?? String(bill.waterAmount) ?? '0');
       const elec = parseFloat(data.electricityAmount ?? String(bill.electricityAmount) ?? '0');
@@ -599,6 +602,10 @@ export const appRouter = router({
       const penalty = parseFloat(data.penalty ?? String(bill.penalty) ?? '0');
       const total = rent + water + elec + other - discount + penalty;
       return db.updateBill(billId, { ...data, totalAmount: String(total) } as any, ctx.user.id, ctx.user.name ?? 'Admin', editReason);
+    }),
+    delete: adminProcedure.input(z.object({ billId: z.number() })).mutation(async ({ input }) => {
+      await db.deleteBill(input.billId);
+      return { success: true };
     }),
   }),
 

@@ -110,6 +110,7 @@ function EditBillModal({ bill, onClose }: { bill: any; onClose: () => void }) {
     discount: String(bill.discount || "0"),
     penalty: String(bill.penalty || "0"),
     dueDate: bill.dueDate ? String(bill.dueDate).split("T")[0] : "",
+    promptPayId: bill.promptPayId || "",
     notes: bill.notes || "",
     editReason: "",
   });
@@ -136,7 +137,10 @@ function EditBillModal({ bill, onClose }: { bill: any; onClose: () => void }) {
             <div><label className="brut-label">ส่วนลด</label><input className="brut-input font-mono" type="number" value={form.discount} onChange={e => set("discount", e.target.value)} /></div>
             <div><label className="brut-label">ค่าปรับ</label><input className="brut-input font-mono" type="number" value={form.penalty} onChange={e => set("penalty", e.target.value)} /></div>
           </div>
-          <div><label className="brut-label">วันครบกำหนด</label><input className="brut-input" type="date" value={form.dueDate} onChange={e => set("dueDate", e.target.value)} /></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className="brut-label">วันครบกำหนด</label><input className="brut-input" type="date" value={form.dueDate} onChange={e => set("dueDate", e.target.value)} /></div>
+            <div><label className="brut-label">PromptPay ID</label><input className="brut-input" type="text" value={form.promptPayId} onChange={e => set("promptPayId", e.target.value)} placeholder="เบอร์โทร / เลขบัตร" /></div>
+          </div>
           <div><label className="brut-label">หมายเหตุ</label><textarea className="brut-input" rows={2} value={form.notes} onChange={e => set("notes", e.target.value)} /></div>
           <div>
             <label className="brut-label">เหตุผลที่แก้ไข *</label>
@@ -164,6 +168,15 @@ export default function BillDetail() {
   );
   const [showPayment, setShowPayment] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const utils = trpc.useUtils();
+  const deleteBill = trpc.bills.delete.useMutation({
+    onSuccess: () => {
+      toast.success("ลบบิลสำเร็จ");
+      utils.bills.list.invalidate();
+      navigate("/bills");
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   if (isLoading) {
     return (
@@ -354,6 +367,17 @@ export default function BillDetail() {
               className="w-full flex items-center justify-center gap-2 px-5 py-2.5 border-2 border-black text-sm font-bold uppercase hover:bg-gray-100 transition-all">
               <Download className="w-4 h-4" />ดาวน์โหลด PDF
             </a>
+            <button
+              disabled={deleteBill.isPending}
+              onClick={() => {
+                if (window.confirm("คุณต้องการลบบิลนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้")) {
+                  deleteBill.mutate({ billId: bill.id });
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 px-5 py-2.5 border-2 border-red-600 text-red-600 text-sm font-bold uppercase hover:bg-red-50 hover:border-red-700 transition-all mt-4 disabled:opacity-50"
+            >
+              <Trash2 className="w-4 h-4" /> {deleteBill.isPending ? "กำลังลบ..." : "ลบใบแจ้งหนี้"}
+            </button>
           </div>
 
           {bill.notes && (
