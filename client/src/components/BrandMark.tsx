@@ -1,3 +1,5 @@
+import { Home } from "lucide-react";
+
 type BrandMarkProps = {
   size?: "sm" | "md" | "lg";
   inverted?: boolean;
@@ -16,34 +18,40 @@ export default function BrandMark({
   className = "",
 }: BrandMarkProps) {
   const wrapperTone = inverted
-    ? "bg-white text-black shadow-[0_14px_32px_rgba(255,255,255,0.08)]"
-    : "bg-black text-white shadow-[0_18px_40px_rgba(0,0,0,0.16)]";
-  const folderColor = inverted ? "#0b0b0b" : "#ffffff";
-  const accentColor = "#d7b56d";
+    ? "bg-white text-slate-900 shadow-[0_8px_30px_rgba(255,255,255,0.12)]"
+    : "bg-slate-900 text-white shadow-[0_8px_30px_rgba(0,0,0,0.08)]";
+  
+  const iconColor = inverted ? "#0f172a" : "#ffffff";
+  const accentColor = "#3b82f6"; // sleek modern blue accent
 
   return (
     <div
-      className={`flex items-center justify-center rounded-[1.15rem] ${sizeClasses[size]} ${wrapperTone} ${className}`.trim()}
+      className={`flex items-center justify-center rounded-2xl ${sizeClasses[size]} ${wrapperTone} ${className}`.trim()}
+      style={{
+        background: inverted ? "linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)" : "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
+      }}
     >
       <svg
-        viewBox="0 0 64 64"
-        className="h-[70%] w-[70%]"
+        viewBox="0 0 24 24"
+        className="h-[60%] w-[60%]"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         aria-hidden="true"
       >
         <path
-          d="M10 20.5C10 16.9101 12.9101 14 16.5 14H24.5L29.2 18H47.5C51.0899 18 54 20.9101 54 24.5V25H10V20.5Z"
-          fill={folderColor}
-          fillOpacity="0.92"
+          d="M3 10L12 3L21 10M19 9V20C19 20.5523 18.5523 21 18 21H6C5.44772 21 5 20.5523 5 20V9"
+          stroke={iconColor}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         />
         <path
-          d="M10 26H54V42.5C54 46.0899 51.0899 49 47.5 49H16.5C12.9101 49 10 46.0899 10 42.5V26Z"
-          fill={folderColor}
+          d="M9 21V12H15V21"
+          stroke={accentColor}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         />
-        <path d="M38 36H46" stroke={accentColor} strokeWidth="2.6" strokeLinecap="round" />
-        <path d="M34 40.5H46" stroke={accentColor} strokeWidth="2.6" strokeLinecap="round" />
-        <path d="M38 45H46" stroke={accentColor} strokeWidth="2.6" strokeLinecap="round" />
       </svg>
     </div>
   );

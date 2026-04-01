@@ -64,11 +64,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex items-center gap-3">
           <BrandMark size="sm" inverted />
           <div>
-            <div className="text-2xl font-black tracking-tighter leading-none">
-              หอพัก<span className="text-[#d7b56d]">โปร</span>
+            <div className="text-2xl font-black tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-200">
+              หอพัก<span className="text-blue-400">โปร</span>
             </div>
-            <div className="text-[11px] font-mono text-[#d7b56d] uppercase tracking-[0.25em] mt-1">
-              Minimal Black
+            <div className="text-[10px] font-bold text-blue-400/80 uppercase tracking-widest mt-1.5">
+              Modern Premium
             </div>
           </div>
         </div>
@@ -88,11 +88,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <button
               key={item.path}
               onClick={() => { navigate(item.path); setMobileOpen(false); }}
-              className={`w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold uppercase tracking-wide transition-all ${
-                isActive
-                  ? "bg-white text-black shadow-[0_12px_24px_rgba(255,255,255,0.08)]"
-                  : "text-white/70 hover:bg-white/6 hover:text-white"
-              }`}
+              className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all ${isActive
+                  ? "bg-blue-600/10 text-blue-400 shadow-sm border border-blue-500/20"
+                  : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                }`}
             >
               <Icon className="w-4 h-4 shrink-0" />
               {item.label}
@@ -113,7 +112,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 rounded-full border border-white/20 px-4 py-2.5 text-sm font-bold uppercase text-white/80 hover:border-white hover:text-white transition-all"
+          className="w-full flex items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-slate-300 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all"
         >
           <LogOut className="w-4 h-4" />
           ออกจากระบบ
@@ -123,20 +122,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   );
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-slate-50/50 flex">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-72 bg-black text-white flex-col shrink-0 border-r border-white/10 shadow-[16px_0_40px_rgba(0,0,0,0.08)]">
+      <aside className="hidden lg:flex w-72 bg-slate-950 text-white flex-col shrink-0 border-r border-slate-800 shadow-xl">
         <NavContent />
       </aside>
 
       {/* Mobile overlay */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute left-0 top-0 bottom-0 w-72 bg-black text-white flex flex-col border-r border-white/10">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <aside className="absolute left-0 top-0 bottom-0 w-72 bg-slate-950 text-white flex flex-col border-r border-slate-800 shadow-2xl">
             <button
               onClick={() => setMobileOpen(false)}
-              className="absolute top-4 right-4 text-white/70 hover:text-white"
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
             >
               <X className="w-6 h-6" />
             </button>
@@ -148,13 +147,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile header */}
-        <div className="lg:hidden flex items-center gap-4 px-4 py-3 border-b border-black/10 bg-white/85 backdrop-blur-sm text-black">
-          <button onClick={() => setMobileOpen(true)}>
-            <Menu className="w-6 h-6" />
-          </button>
+        <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white/80 backdrop-blur-md text-slate-900 sticky top-0 z-40">
           <div className="flex items-center gap-3">
+            <button onClick={() => setMobileOpen(true)} className="p-1 rounded-md hover:bg-slate-100 transition-colors">
+              <Menu className="w-6 h-6" />
+            </button>
             <BrandMark size="sm" />
-            <span className="text-lg font-black tracking-tight">หอพักโปร</span>
+            <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-blue-700">หอพักโปร</span>
           </div>
         </div>
 

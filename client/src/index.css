@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -44,39 +44,39 @@
 }
 
 :root {
-  --primary: oklch(0.08 0 0);
+  --primary: oklch(0.2 0.05 250);
   --primary-foreground: oklch(0.99 0 0);
-  --sidebar-primary: oklch(0.08 0 0);
+  --sidebar-primary: oklch(0.2 0.05 250);
   --sidebar-primary-foreground: oklch(0.99 0 0);
   --chart-1: oklch(0.55 0.18 240);
   --chart-2: oklch(0.55 0.18 145);
   --chart-3: oklch(0.75 0.18 75);
   --chart-4: oklch(0.55 0.22 27);
   --chart-5: oklch(0.55 0.18 300);
-  --radius: 14px;
-  --background: oklch(0.985 0 0);
-  --foreground: oklch(0.08 0 0);
-  --card: oklch(0.995 0 0);
-  --card-foreground: oklch(0.08 0 0);
-  --popover: oklch(0.995 0 0);
-  --popover-foreground: oklch(0.08 0 0);
-  --secondary: oklch(0.965 0 0);
-  --secondary-foreground: oklch(0.08 0 0);
-  --muted: oklch(0.96 0.01 85);
-  --muted-foreground: oklch(0.5 0.01 85);
-  --accent: oklch(0.93 0.03 85);
-  --accent-foreground: oklch(0.18 0.01 85);
+  --radius: 1rem;
+  --background: oklch(0.985 0.005 250);
+  --foreground: oklch(0.2 0.05 250);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.05 250);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.05 250);
+  --secondary: oklch(0.965 0.01 250);
+  --secondary-foreground: oklch(0.2 0.05 250);
+  --muted: oklch(0.96 0.01 250);
+  --muted-foreground: oklch(0.5 0.02 250);
+  --accent: oklch(0.95 0.02 250);
+  --accent-foreground: oklch(0.2 0.05 250);
   --destructive: oklch(0.55 0.22 27);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.18 0 0 / 18%);
-  --input: oklch(0.18 0 0 / 18%);
-  --ring: oklch(0.72 0.08 85);
-  --sidebar: oklch(0.08 0 0);
-  --sidebar-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.16 0 0);
-  --sidebar-accent-foreground: oklch(0.99 0 0);
-  --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.45 0 0);
+  --border: oklch(0.9 0.01 250);
+  --input: oklch(0.9 0.01 250);
+  --ring: oklch(0.7 0.05 250);
+  --sidebar: oklch(0.15 0.02 250);
+  --sidebar-foreground: oklch(0.98 0.01 250);
+  --sidebar-accent: oklch(0.25 0.03 250);
+  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar-border: oklch(0.25 0.03 250);
+  --sidebar-ring: oklch(0.4 0.1 250);
 }
 
 .dark {
@@ -120,17 +120,18 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: 'Prompt', 'Outfit', sans-serif;
     -webkit-font-smoothing: antialiased;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: 'Prompt', 'Outfit', sans-serif;
     font-weight: 700;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
   }
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: oklch(0.95 0 0); }
-  ::-webkit-scrollbar-thumb { background: oklch(0.08 0 0); }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--muted-foreground); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--foreground); }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   [type="button"]:not(:disabled),
@@ -145,24 +146,11 @@
 }
 
 @layer components {
-  /**
-   * Custom container utility that centers content and adds responsive padding.
-   *
-   * This overrides Tailwind's default container behavior to:
-   * - Auto-center content (mx-auto)
-   * - Add responsive horizontal padding
-   * - Set max-width for large screens
-   *
-   * Usage: <div className="container">...</div>
-   *
-   * For custom widths, use max-w-* utilities directly:
-   * <div className="max-w-6xl mx-auto px-4">...</div>
-   */
   .container {
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    padding-left: 1rem; /* 16px - mobile padding */
+    padding-left: 1rem;
     padding-right: 1rem;
   }
 
@@ -171,109 +159,109 @@
     min-width: 0;
   }
 
-  /* Brutalist button */
+  /* Sleek modern button (replacing brutalist) */
   .brut-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.75rem 1.25rem;
-    background: oklch(0.08 0 0);
-    color: oklch(0.99 0 0);
-    border: 1px solid oklch(0.08 0 0);
-    font-weight: 700;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    padding: 0.75rem 1.5rem;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border: 1px solid transparent;
+    font-weight: 600;
+    font-size: 0.875rem;
     border-radius: 9999px;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
-    box-shadow: 0 12px 24px oklch(0.08 0 0 / 14%), inset 0 1px 0 oklch(0.85 0.02 85 / 18%);
+    box-shadow: 0 4px 12px oklch(0.2 0.05 250 / 15%);
   }
   .brut-btn:hover:not(:disabled) {
-    background: oklch(0.16 0 0);
-    transform: translateY(-1px);
-    box-shadow: 0 16px 30px oklch(0.08 0 0 / 20%), inset 0 1px 0 oklch(0.85 0.02 85 / 22%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px oklch(0.2 0.05 250 / 25%);
+    filter: brightness(1.1);
   }
   .brut-btn:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 
-  /* Brutalist input */
+  /* Sleek modern input */
   .brut-input {
     width: 100%;
-    padding: 0.75rem 0.95rem;
-    border: 1px solid oklch(0.18 0 0 / 20%);
-    border-radius: 14px;
-    background: oklch(1 0 0);
-    font-size: 0.875rem;
+    padding: 0.7rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--card);
+    font-size: 0.9rem;
     outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    transition: all 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
   }
   .brut-input:focus {
-    border-color: oklch(0.08 0 0);
-    box-shadow: 0 0 0 4px oklch(0.72 0.08 85 / 18%);
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px oklch(0.7 0.05 250 / 20%);
   }
 
-  /* Brutalist label */
+  /* Sleek modern label */
   .brut-label {
     display: block;
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-family: 'Space Mono', monospace;
-    margin-bottom: 0.375rem;
-    color: oklch(0.35 0 0);
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    color: var(--muted-foreground);
+    font-family: 'Prompt', 'Outfit', sans-serif;
   }
 
-  /* Brutalist card */
+  /* Sleek modern card */
   .brut-card {
-    background: white;
-    border: 1px solid oklch(0.18 0 0 / 14%);
+    background: var(--card);
+    border: 1px solid var(--border);
     padding: 1.5rem;
-    border-radius: 24px;
-    box-shadow: 0 20px 45px oklch(0.08 0 0 / 8%);
+    border-radius: 20px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.04);
   }
   .brut-card-hover {
-    background: white;
-    border: 1px solid oklch(0.18 0 0 / 14%);
+    background: var(--card);
+    border: 1px solid var(--border);
     padding: 1.5rem;
-    border-radius: 24px;
-    box-shadow: 0 20px 45px oklch(0.08 0 0 / 8%);
-    transition: all 0.2s ease;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
   .brut-card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 24px 50px oklch(0.08 0 0 / 12%);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+    border-color: var(--ring);
   }
 
-  /* Status badges */
-  .badge-vacant { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.45 0.18 145); color: oklch(0.35 0.18 145); background: oklch(0.97 0.05 145); }
-  .badge-occupied { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.5 0.22 27); color: oklch(0.4 0.22 27); background: oklch(0.97 0.05 27); }
-  .badge-reserved { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.65 0.18 75); color: oklch(0.5 0.18 75); background: oklch(0.97 0.05 75); }
-  .badge-maintenance { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.5 0 0); color: oklch(0.35 0 0); background: oklch(0.95 0 0); }
-  .badge-daily { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.5 0.18 240); color: oklch(0.4 0.18 240); background: oklch(0.97 0.05 240); }
-  .badge-monthly { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.5 0.18 300); color: oklch(0.4 0.18 300); background: oklch(0.97 0.05 300); }
-  .badge-paid { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.45 0.18 145); color: oklch(0.35 0.18 145); background: oklch(0.97 0.05 145); }
-  .badge-unpaid { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.5 0.22 27); color: oklch(0.4 0.22 27); background: oklch(0.97 0.05 27); }
-  .badge-partial { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.65 0.18 75); color: oklch(0.5 0.18 75); background: oklch(0.97 0.05 75); }
-  .badge-overdue { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.35 0.22 27); color: oklch(0.3 0.22 27); background: oklch(0.95 0.08 27); }
-  .badge-pending_verification { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.5 0.18 240); color: oklch(0.4 0.18 240); background: oklch(0.97 0.05 240); }
+  /* Softer badges */
+  .badge-vacant { display: inline-flex; align-items: center; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 999px; color: oklch(0.45 0.18 145); background: oklch(0.97 0.05 145); }
+  .badge-occupied { display: inline-flex; align-items: center; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 999px; color: oklch(0.5 0.22 27); background: oklch(0.97 0.05 27); }
+  .badge-reserved { display: inline-flex; align-items: center; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 999px; color: oklch(0.5 0.18 75); background: oklch(0.97 0.05 75); }
+  .badge-maintenance { display: inline-flex; align-items: center; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 999px; color: oklch(0.5 0.1 20); background: oklch(0.96 0.02 20); }
+  .badge-daily { display: inline-flex; align-items: center; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 999px; color: oklch(0.5 0.18 240); background: oklch(0.97 0.05 240); }
+  .badge-monthly { display: inline-flex; align-items: center; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 999px; color: oklch(0.5 0.18 300); background: oklch(0.97 0.05 300); }
+  .badge-paid { display: inline-flex; align-items: center; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 999px; color: oklch(0.45 0.18 145); background: oklch(0.97 0.05 145); }
+  .badge-unpaid { display: inline-flex; align-items: center; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 999px; color: oklch(0.5 0.22 27); background: oklch(0.97 0.05 27); }
+  .badge-partial { display: inline-flex; align-items: center; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 999px; color: oklch(0.5 0.18 75); background: oklch(0.97 0.05 75); }
+  .badge-overdue { display: inline-flex; align-items: center; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 999px; color: oklch(0.45 0.22 27); background: oklch(0.96 0.05 27); }
+  .badge-pending_verification { display: inline-flex; align-items: center; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 999px; color: oklch(0.5 0.18 240); background: oklch(0.97 0.05 240); }
 
   @media (min-width: 640px) {
     .container {
-      padding-left: 1.5rem; /* 24px - tablet padding */
+      padding-left: 1.5rem;
       padding-right: 1.5rem;
     }
   }
 
   @media (min-width: 1024px) {
     .container {
-      padding-left: 2rem; /* 32px - desktop padding */
+      padding-left: 2rem;
       padding-right: 2rem;
-      max-width: 1280px; /* Standard content width */
+      max-width: 1280px;
     }
   }
 }
