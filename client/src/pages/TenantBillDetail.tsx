@@ -39,7 +39,7 @@ function SlipModal({ bill, onClose }: { bill: any; onClose: () => void }) {
 
   const submitSlip = trpc.tenants.submitPaymentSlip.useMutation({
     onSuccess: () => {
-      utils.bills.getById.invalidate();
+      utils.bills.byId.invalidate();
       toast.success("ส่งหลักฐานการชำระเงินสำเร็จ รอการตรวจสอบจากเจ้าของ");
       onClose();
     },
@@ -93,7 +93,7 @@ function SlipModal({ bill, onClose }: { bill: any; onClose: () => void }) {
 export default function TenantBillDetail() {
   const params = useParams<{ id: string }>();
   const [, navigate] = useLocation();
-  const { data: bill, isLoading } = trpc.bills.getById.useQuery({ id: parseInt(params.id) });
+  const { data: bill, isLoading } = trpc.bills.byId.useQuery({ id: parseInt(params.id) });
   const [showSlip, setShowSlip] = useState(false);
 
   if (isLoading) {

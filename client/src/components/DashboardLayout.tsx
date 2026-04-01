@@ -30,7 +30,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   if (!isAuthenticated) {
-    window.location.href = getLoginUrl();
+    window.location.href = getLoginUrl() || "/";
     return null;
   }
 
@@ -89,8 +89,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               key={item.path}
               onClick={() => { navigate(item.path); setMobileOpen(false); }}
               className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all ${isActive
-                  ? "bg-blue-600/10 text-blue-400 shadow-sm border border-blue-500/20"
-                  : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                ? "bg-blue-600/10 text-blue-400 shadow-sm border border-blue-500/20"
+                : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
                 }`}
             >
               <Icon className="w-4 h-4 shrink-0" />

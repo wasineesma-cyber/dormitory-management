@@ -50,7 +50,7 @@ function PaymentModal({ bill, onClose }: { bill: any; onClose: () => void }) {
   const [slip, setSlip] = useState("");
 
   const recordPayment = trpc.bills.recordPayment.useMutation({
-    onSuccess: () => { utils.bills.getById.invalidate(); utils.bills.list.invalidate(); toast.success("บันทึกการชำระเงินสำเร็จ"); onClose(); },
+    onSuccess: () => { utils.bills.byId.invalidate(); utils.bills.list.invalidate(); toast.success("บันทึกการชำระเงินสำเร็จ"); onClose(); },
     onError: (err) => toast.error(err.message),
   });
 
@@ -116,7 +116,7 @@ function EditBillModal({ bill, onClose }: { bill: any; onClose: () => void }) {
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
   const editBill = trpc.bills.edit.useMutation({
-    onSuccess: () => { utils.bills.getById.invalidate(); utils.bills.list.invalidate(); toast.success("แก้ไขบิลสำเร็จ"); onClose(); },
+    onSuccess: () => { utils.bills.byId.invalidate(); utils.bills.list.invalidate(); toast.success("แก้ไขบิลสำเร็จ"); onClose(); },
     onError: (err) => toast.error(err.message),
   });
 
@@ -158,7 +158,7 @@ export default function BillDetail() {
   const params = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const billId = Number.parseInt(params.id ?? "", 10);
-  const { data: bill, isLoading } = trpc.bills.getById.useQuery(
+  const { data: bill, isLoading } = trpc.bills.byId.useQuery(
     { id: billId },
     { enabled: Number.isFinite(billId) }
   );
