@@ -124,8 +124,31 @@ export function registerPdfRoutes(app: Router) {
 
         doc.moveTo(50, 200).lineTo(545, 200).lineWidth(1).stroke();
 
+        let startY = 215;
+
+        // Meter Info
+        if (bill.waterMeterBefore || bill.electricityMeterBefore) {
+          doc.fontSize(10).font(fontName(true)).text("ข้อมูลมิเตอร์", 50, startY);
+          startY += 15;
+          doc.font(fontName());
+
+          if (bill.waterMeterBefore) {
+            doc.text(`น้ำก่อน: ${bill.waterMeterBefore}`, 50, startY);
+            doc.text(`น้ำหลัง: ${bill.waterMeterAfter}`, 150, startY);
+            doc.text(`ใช้ไป: ${bill.waterUnitsUsed} หน่วย`, 250, startY);
+            startY += 15;
+          }
+          if (bill.electricityMeterBefore) {
+            doc.text(`ไฟก่อน: ${bill.electricityMeterBefore}`, 50, startY);
+            doc.text(`ไฟหลัง: ${bill.electricityMeterAfter}`, 150, startY);
+            doc.text(`ใช้ไป: ${bill.electricityUnitsUsed} หน่วย`, 250, startY);
+            startY += 20;
+          }
+          doc.moveTo(50, startY - 5).lineTo(545, startY - 5).lineWidth(1).stroke();
+        }
+
         // Table header
-        let y = 215;
+        let y = startY;
         doc.fontSize(10).font(fontName(true));
         doc.text("รายการ", 50, y, { width: 300 });
         doc.text("จำนวน", 350, y, { width: 60, align: "center" });
@@ -139,6 +162,7 @@ export function registerPdfRoutes(app: Router) {
         doc.font(fontName()).fontSize(10);
         if (items.length > 0) {
           for (const item of items) {
+            if (y > 700) { doc.addPage(); y = 50; }
             doc.text(item.description ?? "", 50, y, { width: 300 });
             doc.text(String(item.quantity ?? "1"), 350, y, { width: 60, align: "center" });
             doc.text(`${Number(item.unitPrice ?? 0).toLocaleString()}`, 410, y, { width: 65, align: "right" });
@@ -155,6 +179,7 @@ export function registerPdfRoutes(app: Router) {
           ];
           for (const item of mainItems) {
             if (Number(item.amount) > 0) {
+              if (y > 700) { doc.addPage(); y = 50; }
               doc.text(item.desc, 50, y, { width: 300 });
               doc.text("1", 350, y, { width: 60, align: "center" });
               doc.text(`${Number(item.amount).toLocaleString()}`, 410, y, { width: 65, align: "right" });
@@ -166,12 +191,14 @@ export function registerPdfRoutes(app: Router) {
 
         // Discount & Penalty
         if (Number(bill.discount) > 0) {
+          if (y > 700) { doc.addPage(); y = 50; }
           doc.fillColor("green").text("ส่วนลด", 50, y, { width: 300 });
           doc.text(`-${Number(bill.discount).toLocaleString()}`, 480, y, { width: 65, align: "right" });
           doc.fillColor("black");
           y += 20;
         }
         if (Number(bill.penalty) > 0) {
+          if (y > 700) { doc.addPage(); y = 50; }
           doc.fillColor("red").text("ค่าปรับ", 50, y, { width: 300 });
           doc.text(`+${Number(bill.penalty).toLocaleString()}`, 480, y, { width: 65, align: "right" });
           doc.fillColor("black");
@@ -180,6 +207,7 @@ export function registerPdfRoutes(app: Router) {
 
         // Total
         y += 5;
+        if (y > 700) { doc.addPage(); y = 50; }
         doc.moveTo(350, y).lineTo(545, y).lineWidth(2).stroke();
         y += 10;
         doc.fontSize(14).font(fontName(true));
@@ -189,6 +217,7 @@ export function registerPdfRoutes(app: Router) {
         // QR Code (if PromptPay available)
         if (bill.promptPayId) {
           y += 40;
+          if (y > 550) { doc.addPage(); y = 50; } // Ensure enough space for QR code
           const remaining = Number(bill.totalAmount) - Number(bill.paidAmount ?? 0);
           if (remaining > 0) {
             const payload = generatePromptPayPayload(bill.promptPayId, remaining);
@@ -203,6 +232,7 @@ export function registerPdfRoutes(app: Router) {
         }
 
         // Footer
+        if (y > 700) { doc.addPage(); y = 50; }
         doc.fontSize(8).font(fontName()).fillColor("gray");
         doc.text("ออกเอกสารโดย HorPakMax - ระบบจัดการหอพัก", 50, 770, { align: "center", width: 495 });
 
