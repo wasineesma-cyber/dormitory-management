@@ -1,0 +1,48 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1775048538087,
+      "tag": "0000_rainy_thaddeus_ross",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1775048726322,
+      "tag": "0001_old_ser_duncan",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1775050530038,
+      "tag": "0002_demonic_jigsaw",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1775052285988,
+      "tag": "0003_cuddly_starjammers",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1775054842897,
+      "tag": "0004_unusual_red_wolf",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1775063786060,
+      "tag": "0005_skinny_mentallo",
+      "breakpoints": true
+    }
+  ]
+}

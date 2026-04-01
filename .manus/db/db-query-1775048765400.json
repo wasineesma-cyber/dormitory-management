@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `rooms` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`roomNumber` varchar(20) NOT NULL,\n\t`floor` varchar(10),\n\t`building` varchar(100),\n\t`type` enum('daily','monthly') NOT NULL DEFAULT 'monthly',\n\t`status` enum('vacant','occupied','reserved','maintenance') NOT NULL DEFAULT 'vacant',\n\t`pricePerMonth` decimal(10,2),\n\t`pricePerDay` decimal(10,2),\n\t`waterRatePerUnit` decimal(10,2) DEFAULT '0',\n\t`electricityRatePerUnit` decimal(10,2) DEFAULT '0',\n\t`depositAmount` decimal(10,2) DEFAULT '0',\n\t`description` text,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `rooms_id` PRIMARY KEY(`id`)\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2UQPzeT6ZeFBHg9.root --database PMxXmdG42CmMAogAwxrBf2 --execute CREATE TABLE `rooms` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`roomNumber` varchar(20) NOT NULL,\n\t`floor` varchar(10),\n\t`building` varchar(100),\n\t`type` enum('daily','monthly') NOT NULL DEFAULT 'monthly',\n\t`status` enum('vacant','occupied','reserved','maintenance') NOT NULL DEFAULT 'vacant',\n\t`pricePerMonth` decimal(10,2),\n\t`pricePerDay` decimal(10,2),\n\t`waterRatePerUnit` decimal(10,2) DEFAULT '0',\n\t`electricityRatePerUnit` decimal(10,2) DEFAULT '0',\n\t`depositAmount` decimal(10,2) DEFAULT '0',\n\t`description` text,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `rooms_id` PRIMARY KEY(`id`)\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1746
+}

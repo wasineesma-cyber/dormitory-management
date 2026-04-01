@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `bill_items` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`billId` int NOT NULL,\n\t`description` varchar(200) NOT NULL,\n\t`quantity` decimal(10,2) DEFAULT '1',\n\t`unitPrice` decimal(10,2) NOT NULL,\n\t`amount` decimal(10,2) NOT NULL,\n\t`itemType` enum('rent','water','electricity','service','penalty','discount','other') DEFAULT 'other',\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `bill_items_id` PRIMARY KEY(`id`),\n\tCONSTRAINT `bill_items_billId_bills_id_fk` FOREIGN KEY (`billId`) REFERENCES `bills`(`id`)\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2UQPzeT6ZeFBHg9.root --database PMxXmdG42CmMAogAwxrBf2 --execute CREATE TABLE `bill_items` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`billId` int NOT NULL,\n\t`description` varchar(200) NOT NULL,\n\t`quantity` decimal(10,2) DEFAULT '1',\n\t`unitPrice` decimal(10,2) NOT NULL,\n\t`amount` decimal(10,2) NOT NULL,\n\t`itemType` enum('rent','water','electricity','service','penalty','discount','other') DEFAULT 'other',\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `bill_items_id` PRIMARY KEY(`id`),\n\tCONSTRAINT `bill_items_billId_bills_id_fk` FOREIGN KEY (`billId`) REFERENCES `bills`(`id`)\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1697
+}

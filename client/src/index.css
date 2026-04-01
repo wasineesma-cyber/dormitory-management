@@ -1,0 +1,273 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --primary: oklch(0.08 0 0);
+  --primary-foreground: oklch(0.99 0 0);
+  --sidebar-primary: oklch(0.08 0 0);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --chart-1: oklch(0.55 0.18 240);
+  --chart-2: oklch(0.55 0.18 145);
+  --chart-3: oklch(0.75 0.18 75);
+  --chart-4: oklch(0.55 0.22 27);
+  --chart-5: oklch(0.55 0.18 300);
+  --radius: 0px;
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.08 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.08 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.08 0 0);
+  --secondary: oklch(0.95 0 0);
+  --secondary-foreground: oklch(0.08 0 0);
+  --muted: oklch(0.95 0 0);
+  --muted-foreground: oklch(0.45 0 0);
+  --accent: oklch(0.95 0 0);
+  --accent-foreground: oklch(0.08 0 0);
+  --destructive: oklch(0.55 0.22 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.08 0 0);
+  --input: oklch(0.08 0 0);
+  --ring: oklch(0.08 0 0);
+  --sidebar: oklch(0.08 0 0);
+  --sidebar-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.18 0 0);
+  --sidebar-accent-foreground: oklch(0.99 0 0);
+  --sidebar-border: oklch(0.25 0 0);
+  --sidebar-ring: oklch(0.45 0 0);
+}
+
+.dark {
+  --primary: var(--color-blue-700);
+  --primary-foreground: var(--color-blue-50);
+  --sidebar-primary: var(--color-blue-500);
+  --sidebar-primary-foreground: var(--color-blue-50);
+  --background: oklch(0.141 0.005 285.823);
+  --foreground: oklch(0.85 0.005 65);
+  --card: oklch(0.21 0.006 285.885);
+  --card-foreground: oklch(0.85 0.005 65);
+  --popover: oklch(0.21 0.006 285.885);
+  --popover-foreground: oklch(0.85 0.005 65);
+  --secondary: oklch(0.24 0.006 286.033);
+  --secondary-foreground: oklch(0.7 0.005 65);
+  --muted: oklch(0.274 0.006 286.033);
+  --muted-foreground: oklch(0.705 0.015 286.067);
+  --accent: oklch(0.274 0.006 286.033);
+  --accent-foreground:  oklch(0.92 0.005 65);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.488 0.243 264.376);
+  --chart-1: var(--color-blue-300);
+  --chart-2: var(--color-blue-500);
+  --chart-3: var(--color-blue-600);
+  --chart-4: var(--color-blue-700);
+  --chart-5: var(--color-blue-800);
+  --sidebar: oklch(0.21 0.006 285.885);
+  --sidebar-foreground: oklch(0.85 0.005 65);
+  --sidebar-accent: oklch(0.274 0.006 286.033);
+  --sidebar-accent-foreground:  oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.488 0.243 264.376);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Space Grotesk', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: oklch(0.95 0 0); }
+  ::-webkit-scrollbar-thumb { background: oklch(0.08 0 0); }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [type="button"]:not(:disabled),
+  [type="submit"]:not(:disabled),
+  [type="reset"]:not(:disabled),
+  a[href],
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled) {
+    @apply cursor-pointer;
+  }
+}
+
+@layer components {
+  /**
+   * Custom container utility that centers content and adds responsive padding.
+   *
+   * This overrides Tailwind's default container behavior to:
+   * - Auto-center content (mx-auto)
+   * - Add responsive horizontal padding
+   * - Set max-width for large screens
+   *
+   * Usage: <div className="container">...</div>
+   *
+   * For custom widths, use max-w-* utilities directly:
+   * <div className="max-w-6xl mx-auto px-4">...</div>
+   */
+  .container {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem; /* 16px - mobile padding */
+    padding-right: 1rem;
+  }
+
+  .flex {
+    min-height: 0;
+    min-width: 0;
+  }
+
+  /* Brutalist button */
+  .brut-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    background: oklch(0.08 0 0);
+    color: oklch(0.99 0 0);
+    border: 2px solid oklch(0.08 0 0);
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+  .brut-btn:hover:not(:disabled) {
+    background: oklch(0.2 0 0);
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0px oklch(0.08 0 0);
+  }
+  .brut-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Brutalist input */
+  .brut-input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 2px solid oklch(0.08 0 0);
+    background: white;
+    font-size: 0.875rem;
+    outline: none;
+    transition: box-shadow 0.15s;
+  }
+  .brut-input:focus {
+    box-shadow: 3px 3px 0px oklch(0.08 0 0);
+  }
+
+  /* Brutalist label */
+  .brut-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 0.375rem;
+    color: oklch(0.35 0 0);
+  }
+
+  /* Brutalist card */
+  .brut-card {
+    background: white;
+    border: 2px solid oklch(0.08 0 0);
+    padding: 1.5rem;
+    box-shadow: 4px 4px 0px oklch(0.08 0 0);
+  }
+  .brut-card-hover {
+    background: white;
+    border: 2px solid oklch(0.08 0 0);
+    padding: 1.5rem;
+    box-shadow: 4px 4px 0px oklch(0.08 0 0);
+    transition: all 0.15s;
+  }
+  .brut-card-hover:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px oklch(0.08 0 0);
+  }
+
+  /* Status badges */
+  .badge-vacant { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.45 0.18 145); color: oklch(0.35 0.18 145); background: oklch(0.97 0.05 145); }
+  .badge-occupied { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.5 0.22 27); color: oklch(0.4 0.22 27); background: oklch(0.97 0.05 27); }
+  .badge-reserved { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.65 0.18 75); color: oklch(0.5 0.18 75); background: oklch(0.97 0.05 75); }
+  .badge-maintenance { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.5 0 0); color: oklch(0.35 0 0); background: oklch(0.95 0 0); }
+  .badge-daily { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.5 0.18 240); color: oklch(0.4 0.18 240); background: oklch(0.97 0.05 240); }
+  .badge-monthly { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.5 0.18 300); color: oklch(0.4 0.18 300); background: oklch(0.97 0.05 300); }
+  .badge-paid { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.45 0.18 145); color: oklch(0.35 0.18 145); background: oklch(0.97 0.05 145); }
+  .badge-unpaid { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.5 0.22 27); color: oklch(0.4 0.22 27); background: oklch(0.97 0.05 27); }
+  .badge-partial { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.65 0.18 75); color: oklch(0.5 0.18 75); background: oklch(0.97 0.05 75); }
+  .badge-overdue { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.35 0.22 27); color: oklch(0.3 0.22 27); background: oklch(0.95 0.08 27); }
+  .badge-pending_verification { display: inline-flex; align-items: center; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border: 2px solid oklch(0.5 0.18 240); color: oklch(0.4 0.18 240); background: oklch(0.97 0.05 240); }
+
+  @media (min-width: 640px) {
+    .container {
+      padding-left: 1.5rem; /* 24px - tablet padding */
+      padding-right: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container {
+      padding-left: 2rem; /* 32px - desktop padding */
+      padding-right: 2rem;
+      max-width: 1280px; /* Standard content width */
+    }
+  }
+}
