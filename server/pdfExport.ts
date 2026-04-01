@@ -82,124 +82,145 @@ export function registerPdfRoutes(app: Router) {
       const items = await db.getBillItems(billId);
 
       // Create PDF
-      const doc = new PDFDocument({
-        size: "A4",
-        margin: 50,
-        info: {
-          Title: `ใบแจ้งหนี้ ${bill.billNumber}`,
-          Author: "HorPakMax",
-        },
-      });
+      let doc;
+      try {
+        console.log("PDFKit import type:", typeof PDFDocument);
+        const PDFDoc = typeof PDFDocument === 'function' ? PDFDocument : (PDFDocument as any).default;
+        doc = new PDFDoc({
+          size: "A4",
+          margin: 50,
+          info: {
+            Title: `ใบแจ้งหนี้ ${bill.billNumber}`,
+            Author: "HorPakMax",
+          },
+        });
+      } catch (err) {
+        console.error("Error creating PDFDocument constructor:", err);
+        throw err;
+      }
       registerThaiFonts(doc);
 
       // Set response headers
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="bill-${bill.billNumber}.pdf"`);
+      res.setHeader("Content-Disposition", `inline; filename="bill-${bill.billNumber}.pdf"`);
       doc.pipe(res);
 
-      // Header
-      doc.fontSize(28).font(fontName(true)).text("HORPAKMAX", 50, 50);
-      doc.fontSize(10).font(fontName()).text("ระบบจัดการหอพัก", 50, 82);
-      doc.moveTo(50, 100).lineTo(545, 100).lineWidth(3).stroke();
+      try {
+        // Header
+        doc.fontSize(28).font(fontName(true)).text("HORPAKMAX", 50, 50);
+        doc.fontSize(10).font(fontName()).text("ระบบจัดการหอพัก", 50, 82);
+        doc.moveTo(50, 100).lineTo(545, 100).lineWidth(3).stroke();
 
-      // Bill info
-      doc.fontSize(20).font(fontName(true)).text("ใบแจ้งหนี้", 50, 120);
-      doc.fontSize(10).font(fontName());
-      doc.text(`เลขที่บิล: ${bill.billNumber}`, 50, 150);
-      doc.text(`รอบบิล: ${bill.billingPeriod ?? "-"}`, 50, 165);
-      doc.text(`วันครบกำหนด: ${bill.dueDate ? String(bill.dueDate).split("T")[0] : "-"}`, 50, 180);
-      doc.text(`ห้อง: ${bill.roomId}`, 350, 150);
-      doc.text(`สถานะ: ${bill.status}`, 350, 165);
-      doc.text(`วันที่ออกบิล: ${String(bill.createdAt).split("T")[0]}`, 350, 180);
 
-      doc.moveTo(50, 200).lineTo(545, 200).lineWidth(1).stroke();
+        // Bill info
+        doc.fontSize(20).font(fontName(true)).text("ใบแจ้งหนี้", 50, 120);
+        doc.fontSize(10).font(fontName());
+        doc.text(`เลขที่บิล: ${bill.billNumber}`, 50, 150);
+        doc.text(`รอบบิล: ${bill.billingPeriod ?? "-"}`, 50, 165);
+        doc.text(`วันครบกำหนด: ${bill.dueDate ? String(bill.dueDate).split("T")[0] : "-"}`, 50, 180);
+        doc.text(`ห้อง: ${bill.roomId}`, 350, 150);
+        doc.text(`สถานะ: ${bill.status}`, 350, 165);
+        doc.text(`วันที่ออกบิล: ${String(bill.createdAt).split("T")[0]}`, 350, 180);
 
-      // Table header
-      let y = 215;
-      doc.fontSize(10).font(fontName(true));
-      doc.text("รายการ", 50, y, { width: 300 });
-      doc.text("จำนวน", 350, y, { width: 60, align: "center" });
-      doc.text("ราคาต่อหน่วย", 410, y, { width: 65, align: "right" });
-      doc.text("ยอดเงิน", 480, y, { width: 65, align: "right" });
-      y += 20;
-      doc.moveTo(50, y).lineTo(545, y).lineWidth(0.5).stroke();
-      y += 10;
+        doc.moveTo(50, 200).lineTo(545, 200).lineWidth(1).stroke();
 
-      // Items
-      doc.font(fontName()).fontSize(10);
-      if (items.length > 0) {
-        for (const item of items) {
-          doc.text(item.description ?? "", 50, y, { width: 300 });
-          doc.text(String(item.quantity ?? "1"), 350, y, { width: 60, align: "center" });
-          doc.text(`${Number(item.unitPrice ?? 0).toLocaleString()}`, 410, y, { width: 65, align: "right" });
-          doc.text(`${Number(item.amount ?? 0).toLocaleString()}`, 480, y, { width: 65, align: "right" });
-          y += 20;
-        }
-      } else {
-        // Fallback: show main amounts
-        const mainItems = [
-          { desc: "ค่าเช่า", amount: bill.rentAmount },
-          { desc: "ค่าน้ำ", amount: bill.waterAmount },
-          { desc: "ค่าไฟ", amount: bill.electricityAmount },
-          { desc: "ค่าใช้จ่ายอื่น", amount: bill.otherCharges },
-        ];
-        for (const item of mainItems) {
-          if (Number(item.amount) > 0) {
-            doc.text(item.desc, 50, y, { width: 300 });
-            doc.text("1", 350, y, { width: 60, align: "center" });
-            doc.text(`${Number(item.amount).toLocaleString()}`, 410, y, { width: 65, align: "right" });
-            doc.text(`${Number(item.amount).toLocaleString()}`, 480, y, { width: 65, align: "right" });
+        // Table header
+        let y = 215;
+        doc.fontSize(10).font(fontName(true));
+        doc.text("รายการ", 50, y, { width: 300 });
+        doc.text("จำนวน", 350, y, { width: 60, align: "center" });
+        doc.text("ราคาต่อหน่วย", 410, y, { width: 65, align: "right" });
+        doc.text("ยอดเงิน", 480, y, { width: 65, align: "right" });
+        y += 20;
+        doc.moveTo(50, y).lineTo(545, y).lineWidth(0.5).stroke();
+        y += 10;
+
+        // Items
+        doc.font(fontName()).fontSize(10);
+        if (items.length > 0) {
+          for (const item of items) {
+            doc.text(item.description ?? "", 50, y, { width: 300 });
+            doc.text(String(item.quantity ?? "1"), 350, y, { width: 60, align: "center" });
+            doc.text(`${Number(item.unitPrice ?? 0).toLocaleString()}`, 410, y, { width: 65, align: "right" });
+            doc.text(`${Number(item.amount ?? 0).toLocaleString()}`, 480, y, { width: 65, align: "right" });
             y += 20;
           }
+        } else {
+          // Fallback: show main amounts
+          const mainItems = [
+            { desc: "ค่าเช่า", amount: bill.rentAmount },
+            { desc: "ค่าน้ำ", amount: bill.waterAmount },
+            { desc: "ค่าไฟ", amount: bill.electricityAmount },
+            { desc: "ค่าใช้จ่ายอื่น", amount: bill.otherCharges },
+          ];
+          for (const item of mainItems) {
+            if (Number(item.amount) > 0) {
+              doc.text(item.desc, 50, y, { width: 300 });
+              doc.text("1", 350, y, { width: 60, align: "center" });
+              doc.text(`${Number(item.amount).toLocaleString()}`, 410, y, { width: 65, align: "right" });
+              doc.text(`${Number(item.amount).toLocaleString()}`, 480, y, { width: 65, align: "right" });
+              y += 20;
+            }
+          }
+        }
+
+        // Discount & Penalty
+        if (Number(bill.discount) > 0) {
+          doc.fillColor("green").text("ส่วนลด", 50, y, { width: 300 });
+          doc.text(`-${Number(bill.discount).toLocaleString()}`, 480, y, { width: 65, align: "right" });
+          doc.fillColor("black");
+          y += 20;
+        }
+        if (Number(bill.penalty) > 0) {
+          doc.fillColor("red").text("ค่าปรับ", 50, y, { width: 300 });
+          doc.text(`+${Number(bill.penalty).toLocaleString()}`, 480, y, { width: 65, align: "right" });
+          doc.fillColor("black");
+          y += 20;
+        }
+
+        // Total
+        y += 5;
+        doc.moveTo(350, y).lineTo(545, y).lineWidth(2).stroke();
+        y += 10;
+        doc.fontSize(14).font(fontName(true));
+        doc.text("รวมทั้งสิ้น", 350, y, { width: 130 });
+        doc.text(`฿${Number(bill.totalAmount).toLocaleString("th-TH", { minimumFractionDigits: 2 })}`, 480, y, { width: 65, align: "right" });
+
+        // QR Code (if PromptPay available)
+        if (bill.promptPayId) {
+          y += 40;
+          const remaining = Number(bill.totalAmount) - Number(bill.paidAmount ?? 0);
+          if (remaining > 0) {
+            const payload = generatePromptPayPayload(bill.promptPayId, remaining);
+            const qrDataUrl = await QRCode.toDataURL(payload, { width: 150, margin: 1 });
+            const qrBuffer = Buffer.from(qrDataUrl.split(",")[1], "base64");
+            doc.fontSize(10).font(fontName(true)).text("คิวอาร์โค้ด PromptPay", 50, y);
+            y += 15;
+            doc.image(qrBuffer, 50, y, { width: 120, height: 120 });
+            doc.font(fontName()).fontSize(9).text(`PromptPay: ${bill.promptPayId}`, 50, y + 125);
+            doc.text(`ยอดที่ต้องชำระ: ฿${remaining.toLocaleString("th-TH", { minimumFractionDigits: 2 })}`, 50, y + 138);
+          }
+        }
+
+        // Footer
+        doc.fontSize(8).font(fontName()).fillColor("gray");
+        doc.text("ออกเอกสารโดย HorPakMax - ระบบจัดการหอพัก", 50, 770, { align: "center", width: 495 });
+
+        doc.end();
+      } catch (innerError) {
+        console.error("[PDF Export] Inner Error:", innerError);
+        if (!res.headersSent) {
+          res.status(500).json({ error: "Failed to generate PDF" });
+        } else {
+          res.end(); // close stream if headers were already sent
         }
       }
 
-      // Discount & Penalty
-      if (Number(bill.discount) > 0) {
-        doc.fillColor("green").text("ส่วนลด", 50, y, { width: 300 });
-        doc.text(`-${Number(bill.discount).toLocaleString()}`, 480, y, { width: 65, align: "right" });
-        doc.fillColor("black");
-        y += 20;
-      }
-      if (Number(bill.penalty) > 0) {
-        doc.fillColor("red").text("ค่าปรับ", 50, y, { width: 300 });
-        doc.text(`+${Number(bill.penalty).toLocaleString()}`, 480, y, { width: 65, align: "right" });
-        doc.fillColor("black");
-        y += 20;
-      }
-
-      // Total
-      y += 5;
-      doc.moveTo(350, y).lineTo(545, y).lineWidth(2).stroke();
-      y += 10;
-      doc.fontSize(14).font(fontName(true));
-      doc.text("รวมทั้งสิ้น", 350, y, { width: 130 });
-      doc.text(`฿${Number(bill.totalAmount).toLocaleString("th-TH", { minimumFractionDigits: 2 })}`, 480, y, { width: 65, align: "right" });
-
-      // QR Code (if PromptPay available)
-      if (bill.promptPayId) {
-        y += 40;
-        const remaining = Number(bill.totalAmount) - Number(bill.paidAmount ?? 0);
-        if (remaining > 0) {
-          const payload = generatePromptPayPayload(bill.promptPayId, remaining);
-          const qrDataUrl = await QRCode.toDataURL(payload, { width: 150, margin: 1 });
-          const qrBuffer = Buffer.from(qrDataUrl.split(",")[1], "base64");
-          doc.fontSize(10).font(fontName(true)).text("คิวอาร์โค้ด PromptPay", 50, y);
-          y += 15;
-          doc.image(qrBuffer, 50, y, { width: 120, height: 120 });
-          doc.font(fontName()).fontSize(9).text(`PromptPay: ${bill.promptPayId}`, 50, y + 125);
-          doc.text(`ยอดที่ต้องชำระ: ฿${remaining.toLocaleString("th-TH", { minimumFractionDigits: 2 })}`, 50, y + 138);
-        }
-      }
-
-      // Footer
-      doc.fontSize(8).font(fontName()).fillColor("gray");
-      doc.text("ออกเอกสารโดย HorPakMax - ระบบจัดการหอพัก", 50, 770, { align: "center", width: 495 });
-
-      doc.end();
     } catch (error) {
       console.error("[PDF Export] Error:", error);
-      res.status(500).json({ error: "Failed to generate PDF" });
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Failed to generate PDF" });
+      }
     }
   });
 }
