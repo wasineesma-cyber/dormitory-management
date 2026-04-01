@@ -417,15 +417,8 @@ export const appRouter = router({
       status: z.string().optional(),
       roomId: z.number().optional(),
       tenantId: z.number().optional(),
-    })).query(async ({ input, ctx }) => {
-      if (ctx.user.role === 'user') {
-        const tenant = await db.getTenantByUserId(ctx.user.id);
-        if (!tenant) return [];
-        return db.getBills({ tenantId: tenant.id, houseId: ctx.user.houseId ?? undefined });
-      }
-      return db.getBills({ ...input, houseId: ctx.user.houseId ?? undefined });
-    }),
-    getById: protectedProcedure.input(z.object({ id: z.number() })).query(async ({ input, ctx }) => {
+    }).optional()).query(({ input, ctx }) => db.getBills({ ...input, houseId: ctx.user.houseId ?? undefined })),
+    byId: protectedProcedure.input(z.object({ id: z.number() })).query(async ({ input, ctx }) => {
       const bill = await db.getBillById(input.id);
       if (!bill) throw new TRPCError({ code: "NOT_FOUND" });
       if (ctx.user.role === 'user') {
@@ -438,6 +431,36 @@ export const appRouter = router({
       const room = await db.getRoomById(bill.roomId);
       const tenant = bill.tenantId ? await db.getTenantById(bill.tenantId) : null;
       return { ...bill, items, editHistory, payments: billPayments, room, tenant };
+    }),
+    autoFill: adminProcedure.input(z.object({
+      roomId: z.number(),
+      billingPeriod: z.string().optional(),
+    })).query(async ({ input }) => {
+      const room = await db.getRoomById(input.roomId);
+      if (!room) throw new TRPCError({ code: "NOT_FOUND", message: "ไม่พบห้อง" });
+
+      const electricityReading = await db.getMeterReadingForBilling(input.roomId, "electricity", input.billingPeriod);
+      const waterReading = (room as any).waterBillingType === "flat_rate"
+        ? undefined
+        : await db.getMeterReadingForBilling(input.roomId, "water", input.billingPeriod);
+
+      const electricityUnits = electricityReading ? Number(electricityReading.unitsUsed ?? 0) : 0;
+      const electricityRate = Number((room as any).electricityRatePerUnit ?? 0);
+      const waterUnits = waterReading ? Number(waterReading.unitsUsed ?? 0) : 0;
+      const waterRate = Number((room as any).waterRatePerUnit ?? 0);
+      const waterFlatRate = Number((room as any).waterFlatRate ?? 0);
+
+      return {
+        rentAmount: String(room.type === "monthly" ? Number((room as any).pricePerMonth ?? 0) : Number((room as any).pricePerDay ?? 0)),
+        waterAmount: String((room as any).waterBillingType === "flat_rate" ? waterFlatRate : waterUnits * waterRate),
+        electricityAmount: String(electricityUnits * electricityRate),
+        waterMeterBefore: waterReading ? String(waterReading.previousReading ?? "") : "",
+        waterMeterAfter: waterReading ? String(waterReading.currentReading ?? "") : "",
+        waterUnitsUsed: waterReading ? String(waterReading.unitsUsed ?? "") : "",
+        electricityMeterBefore: electricityReading ? String(electricityReading.previousReading ?? "") : "",
+        electricityMeterAfter: electricityReading ? String(electricityReading.currentReading ?? "") : "",
+        electricityUnitsUsed: electricityReading ? String(electricityReading.unitsUsed ?? "") : "",
+      };
     }),
     create: adminProcedure.input(z.object({
       roomId: z.number(),

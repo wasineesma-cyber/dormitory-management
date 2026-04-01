@@ -377,6 +377,27 @@ export async function getLatestMeterReading(roomId: number, type: 'water' | 'ele
   return result[0];
 }
 
+export async function getMeterReadingForBilling(roomId: number, type: 'water' | 'electricity', billingPeriod?: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  if (billingPeriod) {
+    const matched = await db.select().from(meterReadings)
+      .where(and(
+        eq(meterReadings.roomId, roomId),
+        eq(meterReadings.type, type),
+        eq(meterReadings.billingPeriod, billingPeriod),
+      ))
+      .orderBy(desc(meterReadings.readingDate), desc(meterReadings.createdAt))
+      .limit(1);
+    if (matched[0]) return matched[0];
+  }
+  const latest = await db.select().from(meterReadings)
+    .where(and(eq(meterReadings.roomId, roomId), eq(meterReadings.type, type)))
+    .orderBy(desc(meterReadings.readingDate), desc(meterReadings.createdAt))
+    .limit(1);
+  return latest[0];
+}
+
 export async function createMeterReading(data: InsertMeterReading) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");

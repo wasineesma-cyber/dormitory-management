@@ -5,21 +5,39 @@ import QRCode from "qrcode";
 import fs from "fs";
 import path from "path";
 
-const thaiRegularFont = path.resolve(process.cwd(), "assets/fonts/Sarabun-Regular.ttf");
-const thaiBoldFont = path.resolve(process.cwd(), "assets/fonts/Sarabun-Bold.ttf");
+const thaiRegularCandidates = [
+  path.resolve(process.cwd(), "assets/fonts/Sarabun-Regular.ttf"),
+  path.resolve(process.cwd(), "public/fonts/Sarabun-Regular.ttf"),
+  "/System/Library/Fonts/Supplemental/Ayuthaya.ttf",
+  "/System/Library/Fonts/Supplemental/Thonburi.ttc",
+];
+
+const thaiBoldCandidates = [
+  path.resolve(process.cwd(), "assets/fonts/Sarabun-Bold.ttf"),
+  path.resolve(process.cwd(), "public/fonts/Sarabun-Bold.ttf"),
+  "/System/Library/Fonts/Supplemental/Thonburi.ttc",
+  "/System/Library/Fonts/Supplemental/Ayuthaya.ttf",
+];
+
+function firstExistingFont(candidates: string[]) {
+  return candidates.find(candidate => fs.existsSync(candidate));
+}
+
+const thaiRegularFont = firstExistingFont(thaiRegularCandidates);
+const thaiBoldFont = firstExistingFont(thaiBoldCandidates);
 
 function registerThaiFonts(doc: PDFKit.PDFDocument) {
-  if (fs.existsSync(thaiRegularFont)) {
+  if (thaiRegularFont) {
     doc.registerFont("TH", thaiRegularFont);
   }
-  if (fs.existsSync(thaiBoldFont)) {
+  if (thaiBoldFont) {
     doc.registerFont("TH-Bold", thaiBoldFont);
   }
 }
 
 function fontName(bold = false) {
-  if (bold) return fs.existsSync(thaiBoldFont) ? "TH-Bold" : "Helvetica-Bold";
-  return fs.existsSync(thaiRegularFont) ? "TH" : "Helvetica";
+  if (bold) return thaiBoldFont ? "TH-Bold" : "Helvetica-Bold";
+  return thaiRegularFont ? "TH" : "Helvetica";
 }
 
 // Helper to generate PromptPay payload (same as routers.ts)

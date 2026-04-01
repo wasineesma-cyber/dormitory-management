@@ -1,7 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
 import { Eye, Plus, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
@@ -39,6 +39,27 @@ function CreateBillForm({ rooms, tenants, onClose }: { rooms: any[]; tenants: an
   // Auto-fill from room
   const selectedRoom = rooms.find(r => String(r.id) === form.roomId);
   const selectedTenant = tenants.find(t => String(t.id) === form.tenantId);
+  const billAutoFill = trpc.bills.autoFill.useQuery(
+    {
+      roomId: Number(form.roomId),
+      billingPeriod: form.billingPeriod || undefined,
+    },
+    { enabled: !!form.roomId }
+  );
+
+  useEffect(() => {
+    if (!billAutoFill.data || !form.roomId) return;
+    setForm(f => ({
+      ...f,
+      rentAmount: billAutoFill.data?.rentAmount ?? f.rentAmount,
+      waterAmount: billAutoFill.data?.waterAmount ?? f.waterAmount,
+      electricityAmount: billAutoFill.data?.electricityAmount ?? f.electricityAmount,
+      waterMeterBefore: billAutoFill.data?.waterMeterBefore ?? f.waterMeterBefore,
+      waterMeterAfter: billAutoFill.data?.waterMeterAfter ?? f.waterMeterAfter,
+      electricityMeterBefore: billAutoFill.data?.electricityMeterBefore ?? f.electricityMeterBefore,
+      electricityMeterAfter: billAutoFill.data?.electricityMeterAfter ?? f.electricityMeterAfter,
+    }));
+  }, [billAutoFill.data, form.roomId]);
 
   const handleRoomChange = (roomId: string) => {
     const room = rooms.find(r => String(r.id) === roomId);
@@ -175,6 +196,11 @@ function CreateBillForm({ rooms, tenants, onClose }: { rooms: any[]; tenants: an
                 <input className="brut-input font-mono" type="number" value={form.electricityAmount} onChange={e => set("electricityAmount", e.target.value)} />
               </div>
             </div>
+            {billAutoFill.data && (
+              <div className="mt-3 text-xs font-mono text-muted-foreground border-2 border-dashed border-gray-300 bg-gray-50 p-3">
+                ดึงค่ามิเตอร์ล่าสุดให้อัตโนมัติแล้ว คุณสามารถแก้ไขได้หากต้องการ
+              </div>
+            )}
 
             {/* เลขมิเตอร์ก่อน-หลัง */}
             {selectedRoom && (selectedRoom as any).waterBillingType !== "flat_rate" && (
