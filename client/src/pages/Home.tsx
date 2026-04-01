@@ -1,12 +1,10 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { Building2, ChevronRight, Gauge, Key, Receipt, Shield, Users, Zap } from "lucide-react";
+import { Building2, ChevronRight, FolderClosed, Gauge, Key, Receipt, Shield, Users, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
-
-const LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663502056857/PMxXmdG42CmMAogAwxrBf2/logo-icon-RfHo4pW6zEbJdn8myLGAqi.webp";
 
 export default function Home() {
   const { user, loading, isAuthenticated } = useAuth();
@@ -60,7 +58,9 @@ export default function Home() {
         <div className="flex-1 p-8 lg:p-16 flex flex-col justify-center border-r-0 lg:border-r-4 border-black">
           <div className="max-w-xl">
             <div className="flex items-center gap-3 mb-6">
-              <img src={LOGO_URL} alt="หอพักโปร" className="w-12 h-12 border-2 border-black" />
+              <div className="w-12 h-12 border-2 border-black flex items-center justify-center bg-white">
+                <FolderClosed className="w-7 h-7 text-black" />
+              </div>
               <div className="text-xs font-mono font-bold uppercase tracking-widest text-muted-foreground border-l-4 border-black pl-4">
                 ระบบจัดการหอพัก / อพาร์ทเม้นท์
               </div>
