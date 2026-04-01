@@ -215,18 +215,19 @@ export function registerPdfRoutes(app: Router) {
         doc.text(`฿${Number(bill.totalAmount).toLocaleString("th-TH", { minimumFractionDigits: 2 })}`, 480, y, { width: 65, align: "right" });
 
         // QR Code (if PromptPay available)
-        if (bill.promptPayId) {
+        const activePromptPayId = bill.promptPayId || await db.getSetting(bill.houseId, "promptpay_id");
+        if (activePromptPayId) {
           y += 40;
           if (y > 550) { doc.addPage(); y = 50; } // Ensure enough space for QR code
           const remaining = Number(bill.totalAmount) - Number(bill.paidAmount ?? 0);
           if (remaining > 0) {
-            const payload = generatePromptPayPayload(bill.promptPayId, remaining);
+            const payload = generatePromptPayPayload(activePromptPayId, remaining);
             const qrDataUrl = await QRCode.toDataURL(payload, { width: 150, margin: 1 });
             const qrBuffer = Buffer.from(qrDataUrl.split(",")[1], "base64");
             doc.fontSize(10).font(fontName(true)).text("คิวอาร์โค้ด PromptPay", 50, y);
             y += 15;
             doc.image(qrBuffer, 50, y, { width: 120, height: 120 });
-            doc.font(fontName()).fontSize(9).text(`PromptPay: ${bill.promptPayId}`, 50, y + 125);
+            doc.font(fontName()).fontSize(9).text(`PromptPay: ${activePromptPayId}`, 50, y + 125);
             doc.text(`ยอดที่ต้องชำระ: ฿${remaining.toLocaleString("th-TH", { minimumFractionDigits: 2 })}`, 50, y + 138);
           }
         }
