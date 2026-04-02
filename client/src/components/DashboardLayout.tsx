@@ -64,10 +64,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex items-center gap-3">
           <BrandMark size="sm" inverted />
           <div>
-            <div className="text-2xl font-black tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-200">
-              หอพัก<span className="text-blue-400">โปร</span>
+            <div className="text-2xl font-black tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r from-white to-[#d7b56d]">
+              หอพัก<span className="text-[#d7b56d]">โปร</span>
             </div>
-            <div className="text-[10px] font-bold text-blue-400/80 uppercase tracking-widest mt-1.5">
+            <div className="text-[10px] font-bold text-[#d7b56d]/80 uppercase tracking-widest mt-1.5">
               Modern Premium
             </div>
           </div>
@@ -89,7 +89,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               key={item.path}
               onClick={() => { navigate(item.path); setMobileOpen(false); }}
               className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all ${isActive
-                ? "bg-blue-600/10 text-blue-400 shadow-sm border border-blue-500/20"
+                ? "bg-[#d7b56d]/10 text-[#d7b56d] shadow-sm border border-[#d7b56d]/30"
                 : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
                 }`}
             >
@@ -153,7 +153,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <Menu className="w-6 h-6" />
             </button>
             <BrandMark size="sm" />
-            <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-blue-700">หอพักโปร</span>
+            <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-[#d7b56d]">หอพักโปร</span>
           </div>
         </div>
 
