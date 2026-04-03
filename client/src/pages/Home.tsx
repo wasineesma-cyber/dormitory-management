@@ -259,9 +259,10 @@ export default function Home() {
                 </div>
 
                 {authMode === 'register' && (
-                  <p className="text-[11px] font-mono text-muted-foreground text-center">
-                    ทดลองใช้งานฟรี 90 วัน จากนั้นเริ่มเพียง <span className="font-bold text-black border-b border-black">89 บาท/เดือน</span> (ห้องละ 5 บาท)
-                  </p>
+                  <div className="text-[11px] font-mono text-muted-foreground text-center mt-1 flex flex-col gap-1">
+                    <p>ทดลองใช้งานฟรี <span className="font-bold text-black border-b border-black">90 วันเต็ม</span> ไม่ต้องผูกบัตร!</p>
+                    <p>แผน S (ไม่เกิน 20 ห้อง) เพียง <span className="font-bold text-[#d7b56d]">149 บ./เดือน</span> หรือ <span className="font-bold text-black">1,200 บ./ปี</span></p>
+                  </div>
                 )}
 
                 <button

@@ -31,6 +31,7 @@ type Permissions = {
 export default function Settings() {
   const { user } = useAuth();
   const utils = trpc.useUtils();
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly");
 
   // ─── Dormitory Name ─────────────────────────────────────────────────────
   const houseQuery = trpc.settings.getHouse.useQuery();
@@ -253,10 +254,10 @@ export default function Settings() {
               {/* Subscription Block */}
               {houseQuery.data && (() => {
                 const plans = [
-                  { id: "starter", name: "S - Starter", limit: 20, price: "1,200 บาท/ปี" },
-                  { id: "growth", name: "M - Growth", limit: 50, price: "3,000 บาท/ปี" },
-                  { id: "pro", name: "L - Pro", limit: 100, price: "6,000 บาท/ปี" },
-                  { id: "unlimited", name: "XL - Unlimited", limit: "ไม่จำกัด", price: "9,900 บาท/ปี" },
+                  { id: "starter", name: "S - Starter", limit: 20, priceMonthly: "149 บาท/เดือน", priceYearly: "1,200 บาท/ปี", disableMonthly: false },
+                  { id: "growth", name: "M - Growth", limit: 50, priceMonthly: "299 บาท/เดือน", priceYearly: "3,000 บาท/ปี", disableMonthly: false },
+                  { id: "pro", name: "L - Pro", limit: 100, priceMonthly: null, priceYearly: "6,000 บาท/ปี", disableMonthly: true },
+                  { id: "unlimited", name: "XL - Unlimited", limit: "ไม่จำกัด", priceMonthly: null, priceYearly: "9,900 บาท/ปี", disableMonthly: true },
                 ];
 
                 const currentPlan = houseQuery.data.planType;
@@ -264,47 +265,71 @@ export default function Settings() {
 
                 return (
                   <div className="mt-8 border-t-4 border-black pt-8">
-                    <h2 className="text-xl font-black uppercase tracking-tight mb-2">
-                      แพ็กเกจพื้นที่และการชำระเงิน
-                    </h2>
-                    <p className="text-sm font-mono text-muted-foreground mb-6">
-                      เลือกแผนรายปีให้เหมาะสมกับขนาดหอพักของคุณ (ขณะนี้คุณใช้ {isTrial ? 'แพ็กเกจทดลองใช้ (สูงสุด 5 ห้อง)' : 'แพ็กเกจ ' + currentPlan.toUpperCase()})
-                    </p>
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                      <div>
+                        <h2 className="text-xl font-black uppercase tracking-tight mb-2">
+                          แพ็กเกจพื้นที่และการชำระเงิน
+                        </h2>
+                        <p className="text-sm font-mono text-muted-foreground">
+                          เลือกแผนให้เหมาะสมกับขนาดหอพักของคุณ (ขณะนี้คุณใช้ {isTrial ? 'แพ็กเกจทดลองใช้' : 'แพ็กเกจ ' + currentPlan.toUpperCase()})
+                        </p>
+                      </div>
+
+                      <div className="flex border-2 border-black bg-white rounded-full overflow-hidden p-1 shadow-sm w-full md:w-auto shrink-0">
+                        <button
+                          onClick={() => setBillingCycle("monthly")}
+                          className={`flex-1 md:flex-none px-6 py-2 text-xs font-black uppercase ${billingCycle === "monthly" ? "bg-black text-white" : "hover:bg-slate-100 text-muted-foreground"} rounded-full transition-all`}
+                        >
+                          รายเดือน
+                        </button>
+                        <button
+                          onClick={() => setBillingCycle("yearly")}
+                          className={`flex-1 md:flex-none px-6 py-2 text-xs font-black uppercase ${billingCycle === "yearly" ? "bg-[#d7b56d] text-white" : "hover:bg-slate-100 text-muted-foreground"} rounded-full transition-all`}
+                        >
+                          รายปี (ลด 20%)
+                        </button>
+                      </div>
+                    </div>
 
                     {isTrial && (
-                      <div className="mb-6 p-4 bg-orange-100 border border-orange-500 text-orange-800 font-medium">
+                      <div className="mb-6 p-4 bg-orange-100 border border-orange-500 text-orange-800 font-medium font-mono text-sm">
                         เหลือเวลาทดลองใช้ฟรี {Math.max(0, Math.ceil((new Date(houseQuery.data.trialEndsAt || Date.now()).getTime() - Date.now()) / (1000 * 3600 * 24)))} วัน
                       </div>
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {plans.map((p) => (
-                        <div key={p.id} className={`border-4 p-5 flex flex-col ${currentPlan === p.id ? 'border-green-600 bg-green-50' : 'border-black bg-white hover:-translate-y-1 transition-transform shadow-sm'}`}>
-                          <h3 className="font-black uppercase text-lg">{p.name}</h3>
-                          <p className="text-xs font-mono text-muted-foreground mt-1 mb-4">สูงสุด {p.limit} ห้อง</p>
-                          <div className="font-bold text-xl mb-4 text-[#d7b56d]">{p.price}</div>
+                      {plans.map((p) => {
+                        const isUnavailable = billingCycle === "monthly" && p.disableMonthly;
+                        return (
+                          <div key={p.id} className={`border-4 p-5 flex flex-col ${currentPlan === p.id ? 'border-green-600 bg-green-50' : 'border-black bg-white'} ${isUnavailable ? 'opacity-40 grayscale pointer-events-none' : 'hover:-translate-y-1 transition-transform shadow-sm'}`}>
+                            <h3 className="font-black uppercase text-lg">{p.name}</h3>
+                            <p className="text-xs font-mono text-muted-foreground mt-1 mb-4">สูงสุด {p.limit} ห้อง</p>
+                            <div className="font-bold text-xl mb-4 text-[#d7b56d]">
+                              {isUnavailable ? "❌ ไม่มีรายเดือน" : (billingCycle === "monthly" ? p.priceMonthly : p.priceYearly)}
+                            </div>
 
-                          <div className="mt-auto">
-                            {currentPlan === p.id ? (
-                              <button
-                                onClick={() => portalMutation.mutate()}
-                                disabled={portalMutation.isPending}
-                                className="w-full py-2 bg-green-600 text-white font-black uppercase text-sm outline-none"
-                              >
-                                {portalMutation.isPending ? "กำลังโหลด..." : "จัดการการชำระเงิน"}
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => checkoutMutation.mutate({ planType: p.id as any })}
-                                disabled={checkoutMutation.isPending}
-                                className={`w-full py-2 font-black uppercase text-sm ${currentPlan === p.id ? 'bg-green-600 text-white' : 'bg-black text-white hover:bg-black/80'} outline-none`}
-                              >
-                                เลือกแผนนี้
-                              </button>
-                            )}
+                            <div className="mt-auto">
+                              {currentPlan === p.id ? (
+                                <button
+                                  onClick={() => portalMutation.mutate()}
+                                  disabled={portalMutation.isPending}
+                                  className="w-full py-2 bg-green-600 text-white font-black uppercase text-sm outline-none"
+                                >
+                                  {portalMutation.isPending ? "กำลังโหลด..." : "จัดการข้อมูล"}
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => checkoutMutation.mutate({ planType: p.id as any, billingCycle })}
+                                  disabled={checkoutMutation.isPending || isUnavailable}
+                                  className={`w-full py-2 font-black uppercase text-sm outline-none ${currentPlan === p.id ? 'bg-green-600 text-white' : 'bg-black text-white hover:bg-black/80'} ${isUnavailable ? 'opacity-0' : 'opacity-100'}`}
+                                >
+                                  เลือกแบบ{billingCycle === 'monthly' ? 'รายเดือน' : 'รายปี'}
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   </div>
                 );

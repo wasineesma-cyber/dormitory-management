@@ -773,17 +773,25 @@ export const appRouter = router({
   // ─── Stripe Subscription ──────────────────────────────────────────────────
   stripe: router({
     createCheckoutSession: adminProcedure.input(z.object({
-      planType: z.enum(["starter", "growth", "pro", "unlimited"])
+      planType: z.enum(["starter", "growth", "pro", "unlimited"]),
+      billingCycle: z.enum(["monthly", "yearly"]).default("yearly"),
     })).mutation(async ({ input, ctx }) => {
       const houseId = requireHouseId(ctx.user);
       const house = await db.getHouseById(houseId);
       if (!house) throw new TRPCError({ code: "NOT_FOUND" });
 
+      if (input.billingCycle === "monthly" && !["starter", "growth"].includes(input.planType)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "ชำระรายเดือนรองรับเฉพาะแผน S และ M เท่านั้น" });
+      }
+
+      const priceKey = `${input.planType}_${input.billingCycle}`;
       const PLAN_PRICES: Record<string, string> = {
-        starter: process.env.STRIPE_PRICE_STARTER || "price_placeholder_s",
-        growth: process.env.STRIPE_PRICE_GROWTH || "price_placeholder_m",
-        pro: process.env.STRIPE_PRICE_PRO || "price_placeholder_l",
-        unlimited: process.env.STRIPE_PRICE_UNLIMITED || "price_placeholder_xl",
+        starter_monthly: process.env.STRIPE_PRICE_STARTER_MONTHLY || "price_placeholder_sm",
+        starter_yearly: process.env.STRIPE_PRICE_STARTER_YEARLY || "price_placeholder_sy",
+        growth_monthly: process.env.STRIPE_PRICE_GROWTH_MONTHLY || "price_placeholder_gm",
+        growth_yearly: process.env.STRIPE_PRICE_GROWTH_YEARLY || "price_placeholder_gy",
+        pro_yearly: process.env.STRIPE_PRICE_PRO_YEARLY || "price_placeholder_ly",
+        unlimited_yearly: process.env.STRIPE_PRICE_UNLIMITED_YEARLY || "price_placeholder_xly",
       };
 
       const session = await stripe.checkout.sessions.create({
@@ -791,7 +799,7 @@ export const appRouter = router({
         mode: "subscription",
         line_items: [
           {
-            price: PLAN_PRICES[input.planType],
+            price: PLAN_PRICES[priceKey] || PLAN_PRICES[`${input.planType}_yearly`],
             quantity: 1,
           },
         ],
