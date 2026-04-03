@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_placeholder", {
+  apiVersion: "2025-02-24.acacia" as any,
+});
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -10,9 +15,17 @@ import QRCode from "qrcode";
 import { randomUUID, scryptSync, timingSafeEqual } from "crypto";
 import { sdk } from "./_core/sdk";
 
-// Admin-only middleware
-const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "ต้องเป็นเจ้าของหอพักเท่านั้น" });
+// Admin & Manager middleware
+const adminProcedure = protectedProcedure.use(({ ctx, next }: any) => {
+  if (!["admin", "manager", "superadmin"].includes(ctx.user.role)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "ต้องเป็นแอดมิน ผู้จัดการ หรือซุปเปอร์แอดมินเท่านั้น" });
+  }
+  return next({ ctx });
+});
+
+// Super Admin middleware
+const superAdminProcedure = protectedProcedure.use(({ ctx, next }: any) => {
+  if (ctx.user.role !== "superadmin") throw new TRPCError({ code: "FORBIDDEN", message: "เฉพาะซุปเปอร์แอดมินระบบเท่านั้น" });
   return next({ ctx });
 });
 
@@ -25,7 +38,8 @@ function generateBillNumber(): string {
   return `BILL-${year}${month}-${random}`;
 }
 
-function requireHouseId(user: { houseId: number | null | undefined }) {
+function requireHouseId(user: { houseId: number | null | undefined, role?: string }) {
+  if (user.role === "superadmin" && !user.houseId) return 1; // Fallback to 1 for generic inserts by superadmin
   if (!user.houseId) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "บัญชีนี้ยังไม่ได้ผูกกับบ้าน/หอพัก" });
   }
@@ -109,6 +123,44 @@ export const appRouter = router({
     }),
   }),
   auth: router({
+    register: publicProcedure.input(z.object({
+      name: z.string().min(1),
+      email: z.string().email(),
+      password: z.string().min(6),
+      houseName: z.string().min(1),
+    })).mutation(async ({ input, ctx }: any) => {
+      const existing = await db.getUserByEmail(input.email.trim().toLowerCase());
+      if (existing) {
+        throw new TRPCError({ code: "CONFLICT", message: "อีเมลนี้ถูกใช้งานแล้ว" });
+      }
+
+      // Create a new house for them
+      const house = await db.createHouse(input.houseName);
+
+      const openId = `local-${randomUUID()}`;
+      const passwordHash = scryptSync(input.password, openId, 64).toString("hex");
+      const user = await db.createUser({
+        openId,
+        houseId: house.id,
+        name: input.name.trim(),
+        email: input.email.trim().toLowerCase(),
+        role: "admin", // They own this newly created house
+        authProvider: "local",
+        loginMethod: "local",
+        passwordHash,
+        lastSignedIn: new Date(),
+      } as any);
+
+      const sessionToken = await sdk.createSessionToken(user.openId, {
+        name: user.name || user.email || "",
+        expiresInMs: ONE_YEAR_MS,
+      });
+      const cookieOptions = getSessionCookieOptions(ctx.req);
+      ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+
+      await db.upsertUser({ openId: user.openId, lastSignedIn: new Date() });
+      return { success: true } as const;
+    }),
     me: publicProcedure.query(opts => opts.ctx.user),
     localLogin: publicProcedure.input(z.object({
       email: z.string().email(),
@@ -139,6 +191,34 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+    completeOnboarding: protectedProcedure.mutation(async ({ ctx }) => {
+      await db.updateUserInfo(ctx.user.id, { hasCompletedOnboarding: true });
+      return { success: true } as const;
+    }),
+  }),
+
+  // ─── Notifications ────────────────────────────────────────────────────────────
+  notifications: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role === 'user') {
+        const tenant = await db.getTenantByUserId(ctx.user.id);
+        if (!tenant) return [];
+        return db.getNotificationsForTenant(tenant.id);
+      }
+      return [];
+    }),
+    markAsRead: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => {
+      return db.markNotificationAsRead(input.id);
+    }),
+    markAllAsRead: protectedProcedure.mutation(async ({ ctx }) => {
+      if (ctx.user.role === 'user') {
+        const tenant = await db.getTenantByUserId(ctx.user.id);
+        if (tenant) {
+          await db.markAllNotificationsAsRead(tenant.id);
+        }
+      }
+      return { success: true };
+    }),
   }),
 
   // ─── Dashboard ──────────────────────────────────────────────────────────────
@@ -167,12 +247,23 @@ export const appRouter = router({
       electricityRatePerUnit: z.string().optional(),
       depositAmount: z.string().optional(),
       description: z.string().optional(),
-    })).mutation(({ input, ctx }) => {
+    })).mutation(async ({ input, ctx }) => {
+      const houseId = requireHouseId(ctx.user);
+
+      // Check plan limits
+      const house = await db.getHouseById(houseId);
+      if (house?.planType === "free") {
+        const rooms = await db.getRooms(houseId);
+        if (rooms.length >= 5) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "คุณใช้งานครบ 5 ห้องสำหรับแพ็กเกจทดลองใช้แล้ว กรุณาอัปเกรดเพื่อเพิ่มห้องพัก" });
+        }
+      }
+
       const cleaned: Record<string, any> = {};
       for (const [k, v] of Object.entries(input)) {
         cleaned[k] = v === "" ? null : v;
       }
-      cleaned.houseId = requireHouseId(ctx.user);
+      cleaned.houseId = houseId;
 
       return db.createRoom(cleaned as any);
     }),
@@ -336,7 +427,17 @@ export const appRouter = router({
       cleaned.status = input.status || "arrived";
       cleaned.arrivedAt = input.arrivedAt ? new Date(input.arrivedAt) : new Date();
       cleaned.pickedUpAt = input.pickedUpAt ? new Date(input.pickedUpAt) : null;
-      return db.createPackage(cleaned as any);
+      const pkg = await db.createPackage(cleaned as any);
+      if (input.tenantId) {
+        await db.createNotification({
+          houseId: requireHouseId(ctx.user),
+          tenantId: input.tenantId,
+          type: "parcel",
+          title: "พัสดุใหม่มาถึง",
+          message: `มีพัสดุของคุณ (${input.itemName}) มาถึงแล้วครับ`,
+        });
+      }
+      return pkg;
     }),
     update: adminProcedure.input(z.object({
       id: z.number(),
@@ -539,7 +640,17 @@ export const appRouter = router({
         electricityMeterAfter: input.electricityMeterAfter || null,
         electricityUnitsUsed: input.electricityUnitsUsed || null,
       };
-      return db.createBill(billData as any, input.items as any);
+      const bill = await db.createBill(billData as any, input.items as any);
+      if (input.tenantId) {
+        await db.createNotification({
+          houseId: requireHouseId(ctx.user),
+          tenantId: input.tenantId,
+          type: "bill",
+          title: "มีบิลค่าเช่าใหม่",
+          message: `บิลค่าเช่างวด ${input.billingPeriod || "ล่าสุด"} ออกแล้ว ยอดชำระ ${total} บาท`,
+        });
+      }
+      return bill;
     }),
     update: adminProcedure.input(z.object({
       id: z.number(),
@@ -629,8 +740,19 @@ export const appRouter = router({
     billEditHistory: adminProcedure.query(() => db.getAllBillEditHistory()),
   }),
 
+  // ─── Super Admin ────────────────────────────────────────────────────────
+  superadmin: router({
+    stats: superAdminProcedure.query(async () => {
+      return db.getSuperAdminStats();
+    }),
+  }),
+
   // ─── Settings (General) ──────────────────────────────────────────────────
   settings: router({
+    getHouse: adminProcedure.query(async ({ ctx }) => {
+      const db = await import("./db");
+      return db.getHouseById(requireHouseId(ctx.user));
+    }),
     getAll: adminProcedure.query(({ ctx }) => db.getAllSettings(requireHouseId(ctx.user))),
     get: protectedProcedure.input(z.object({ key: z.string() })).query(({ input, ctx }) => db.getSetting(requireHouseId(ctx.user), input.key)),
     set: adminProcedure.input(z.object({
@@ -639,16 +761,55 @@ export const appRouter = router({
     })).mutation(({ input, ctx }) => db.setSetting(requireHouseId(ctx.user), input.key, input.value)),
   }),
 
+  // ─── Stripe Subscription ──────────────────────────────────────────────────
+  stripe: router({
+    createCheckoutSession: adminProcedure.mutation(async ({ ctx }) => {
+      const houseId = requireHouseId(ctx.user);
+      const house = await db.getHouseById(houseId);
+      if (!house) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card", "promptpay"],
+        mode: "subscription",
+        line_items: [
+          {
+            price: process.env.STRIPE_PREMIUM_PRICE_ID || "price_placeholder",
+            quantity: 1,
+          },
+        ],
+        success_url: `${process.env.PUBLIC_URL || "http://localhost:5173"}/settings?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.PUBLIC_URL || "http://localhost:5173"}/settings`,
+        client_reference_id: String(houseId),
+        customer_email: ctx.user.email || undefined,
+      });
+
+      return { sessionId: session.id, url: session.url };
+    }),
+    createPortalSession: adminProcedure.mutation(async ({ ctx }) => {
+      const houseId = requireHouseId(ctx.user);
+      const house = await db.getHouseById(houseId);
+      if (!house || !house.stripeCustomerId) throw new TRPCError({ code: "BAD_REQUEST", message: "ยังไม่มีข้อมูลชำระเงิน" });
+
+      const session = await stripe.billingPortal.sessions.create({
+        customer: house.stripeCustomerId,
+        return_url: `${process.env.PUBLIC_URL || "http://localhost:5173"}/settings`,
+      });
+
+      return { url: session.url };
+    }),
+  }),
+
   // ─── User Management (Settings) ────────────────────────────────────────────
   userManagement: router({
     list: adminProcedure.query(({ ctx }) => db.getAllUsers(requireHouseId(ctx.user))),
     getById: adminProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getUserById(input.id)),
     updateRole: adminProcedure.input(z.object({
       id: z.number(),
-      role: z.enum(["admin", "user"]),
+      role: z.enum(["admin", "user", "manager", "superadmin"]),
+      permissions: z.any().optional(),
     })).mutation(async ({ input, ctx }) => {
       // Prevent self-demotion
-      if (input.id === ctx.user.id && input.role !== "admin") {
+      if (input.id === ctx.user.id && input.role !== "admin" && input.role !== "superadmin") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "ไม่สามารถลดสิทธิ์ตัวเองได้" });
       }
       // Limit admins to maximum 3
@@ -660,7 +821,7 @@ export const appRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "แอดมินเต็มแล้ว (สูงสุด 3 คน)" });
         }
       }
-      await db.updateUserRole(input.id, input.role);
+      await db.updateUserRole(input.id, input.role, input.permissions);
       return { success: true };
     }),
     updateInfo: adminProcedure.input(z.object({
@@ -675,7 +836,8 @@ export const appRouter = router({
       name: z.string().min(1),
       email: z.string().email(),
       password: z.string().min(6),
-      role: z.enum(["admin", "user"]),
+      role: z.enum(["admin", "user", "manager", "superadmin"]),
+      permissions: z.any().optional(),
     })).mutation(async ({ input, ctx }) => {
       const houseId = requireHouseId(ctx.user);
       const existing = await db.getUserByEmail(input.email.trim().toLowerCase());
@@ -697,6 +859,7 @@ export const appRouter = router({
         name: input.name,
         email: input.email.trim().toLowerCase(),
         role: input.role,
+        permissions: input.permissions || null,
         authProvider: "local",
         loginMethod: "local",
         passwordHash,

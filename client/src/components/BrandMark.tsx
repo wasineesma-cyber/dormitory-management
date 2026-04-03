@@ -14,28 +14,13 @@ const sizeClasses = {
 
 export default function BrandMark({
   size = "md",
-  inverted = false,
   className = "",
 }: BrandMarkProps) {
-  const wrapperTone = inverted
-    ? "bg-white text-black shadow-sm"
-    : "bg-black text-white shadow-sm";
-
-  const iconColor = inverted ? "#000000" : "#ffffff";
-
   return (
-    <div
-      className={`flex items-center justify-center rounded-[25%] ${sizeClasses[size]} ${wrapperTone} ${className}`.trim()}
-      style={{
-        background: inverted ? "#ffffff" : "#000000",
-      }}
-    >
-      <Folder
-        className="h-[55%] w-[55%]"
-        color={iconColor}
-        fill={iconColor}
-        strokeWidth={1}
-      />
-    </div>
+    <img
+      src="/icon-512x512.png"
+      alt="หอพักโปร Logo"
+      className={`rounded-[25%] object-cover ${sizeClasses[size]} ${className}`.trim()}
+    />
   );
 }

@@ -16,6 +16,7 @@ import Reports from "./pages/Reports";
 import TenantPortal from "./pages/TenantPortal";
 import TenantBillDetail from "./pages/TenantBillDetail";
 import Settings from "./pages/Settings";
+import SuperAdminOverview from "./pages/SuperAdminOverview";
 
 function Router() {
   return (
@@ -32,6 +33,7 @@ function Router() {
       <Route path="/settings" component={Settings} />
       <Route path="/portal" component={TenantPortal} />
       <Route path="/portal/bills/:id" component={TenantBillDetail} />
+      <Route path="/superadmin" component={SuperAdminOverview} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

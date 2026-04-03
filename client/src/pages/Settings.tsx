@@ -20,13 +20,20 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-type UserRole = "admin" | "user";
+type UserRole = "admin" | "user" | "manager" | "superadmin";
+
+type Permissions = {
+  manageRooms: boolean;
+  manageBills: boolean;
+  manageSettings: boolean;
+};
 
 export default function Settings() {
   const { user } = useAuth();
   const utils = trpc.useUtils();
 
   // ─── Dormitory Name ─────────────────────────────────────────────────────
+  const houseQuery = trpc.settings.getHouse.useQuery();
   const settingsQuery = trpc.settings.getAll.useQuery();
   const setSettingMutation = trpc.settings.set.useMutation({
     onSuccess: () => {
@@ -43,7 +50,17 @@ export default function Settings() {
       setNewEmail("");
       setNewPassword("");
       setNewRole("user");
+      setNewPermissions({ manageRooms: true, manageBills: true, manageSettings: false });
     },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const checkoutMutation = trpc.stripe.createCheckoutSession.useMutation({
+    onSuccess: (res) => { if (res.url) window.location.href = res.url; },
+    onError: (err) => toast.error(err.message),
+  });
+  const portalMutation = trpc.stripe.createPortalSession.useMutation({
+    onSuccess: (res) => { if (res.url) window.location.href = res.url; },
     onError: (err) => toast.error(err.message),
   });
 
@@ -78,7 +95,8 @@ export default function Settings() {
   const updateRoleMutation = trpc.userManagement.updateRole.useMutation({
     onSuccess: () => {
       utils.userManagement.list.invalidate();
-      toast.success("อัปเดต Role เรียบร้อย");
+      toast.success("อัปเดตสิทธิ์เรียบร้อย");
+      setManagePermsId(null);
     },
     onError: (err) => toast.error(err.message),
   });
@@ -107,6 +125,9 @@ export default function Settings() {
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState<UserRole>("user");
+  const [newPermissions, setNewPermissions] = useState<Permissions>({ manageRooms: true, manageBills: true, manageSettings: false });
+  const [managePermsId, setManagePermsId] = useState<number | null>(null);
+  const [managePermsState, setManagePermsState] = useState<Permissions>({ manageRooms: true, manageBills: true, manageSettings: false });
 
   const startEdit = (u: { id: number; name?: string | null; email?: string | null }) => {
     setEditingUserId(u.id);
@@ -120,6 +141,7 @@ export default function Settings() {
   };
 
   const handleToggleRole = (userId: number, currentRole: string) => {
+    // Basic toggle if admin. For more fine grained, they should use edit.
     const newRole: UserRole = currentRole === "admin" ? "user" : "admin";
     updateRoleMutation.mutate({ id: userId, role: newRole });
   };
@@ -130,7 +152,7 @@ export default function Settings() {
   };
 
   const allUsers = usersQuery.data || [];
-  const admins = allUsers.filter((u) => u.role === "admin");
+  const admins = allUsers.filter((u) => u.role === "admin" || u.role === "manager" || u.role === "superadmin");
   const tenants = allUsers.filter((u) => u.role === "user");
 
   return (
@@ -147,22 +169,20 @@ export default function Settings() {
         <div className="flex gap-0 mb-8 border-b-4 border-black">
           <button
             onClick={() => setActiveTab("general")}
-            className={`px-6 py-3 text-sm font-black uppercase tracking-wide border-b-4 -mb-1 transition-all ${
-              activeTab === "general"
-                ? "border-black text-black"
-                : "border-transparent text-muted-foreground hover:text-black"
-            }`}
+            className={`px-6 py-3 text-sm font-black uppercase tracking-wide border-b-4 -mb-1 transition-all ${activeTab === "general"
+              ? "border-black text-black"
+              : "border-transparent text-muted-foreground hover:text-black"
+              }`}
           >
             <Building2 className="w-4 h-4 inline mr-2" />
             ข้อมูลหอพัก
           </button>
           <button
             onClick={() => setActiveTab("users")}
-            className={`px-6 py-3 text-sm font-black uppercase tracking-wide border-b-4 -mb-1 transition-all ${
-              activeTab === "users"
-                ? "border-black text-black"
-                : "border-transparent text-muted-foreground hover:text-black"
-            }`}
+            className={`px-6 py-3 text-sm font-black uppercase tracking-wide border-b-4 -mb-1 transition-all ${activeTab === "users"
+              ? "border-black text-black"
+              : "border-transparent text-muted-foreground hover:text-black"
+              }`}
           >
             <Users className="w-4 h-4 inline mr-2" />
             จัดการผู้ใช้
@@ -230,6 +250,38 @@ export default function Settings() {
                 </div>
               </div>
 
+              {/* Subscription Block */}
+              {houseQuery.data && (
+                <div className={`mt-6 p-6 border-4 ${houseQuery.data.planType === 'free' ? 'border-orange-500 bg-orange-50' : 'border-green-600 bg-green-50'}`}>
+                  <h3 className="text-sm font-black uppercase tracking-widest mb-1">
+                    {houseQuery.data.planType === 'free' ? 'แพ็กเกจ ทดลองใช้' : 'แพ็กเกจ PREMIUM'}
+                  </h3>
+                  <div className="text-lg font-bold">
+                    {houseQuery.data.planType === 'free'
+                      ? `เหลือเวลาทดลองใช้ ${Math.max(0, Math.ceil((new Date(houseQuery.data.trialEndsAt || Date.now()).getTime() - Date.now()) / (1000 * 3600 * 24)))} วัน`
+                      : `ขีดจำกัดห้อง: ไม่จำกัด`}
+                  </div>
+
+                  {houseQuery.data.planType === 'free' ? (
+                    <button
+                      onClick={() => checkoutMutation.mutate()}
+                      disabled={checkoutMutation.isPending}
+                      className="mt-4 px-6 py-2 bg-orange-600 text-white font-black uppercase text-sm"
+                    >
+                      {checkoutMutation.isPending ? "กำลังพาดำเนินการ..." : "อัปเกรดเป็นพรีเมียม (เดือนละ 89 บาท)"}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => portalMutation.mutate()}
+                      disabled={portalMutation.isPending}
+                      className="mt-4 px-6 py-2 bg-black text-white font-black uppercase text-sm"
+                    >
+                      {portalMutation.isPending ? "กำลังเปิดพอร์ทัล..." : "จัดการข้อมูลชำระเงิน"}
+                    </button>
+                  )}
+                </div>
+              )}
+
               <button
                 onClick={handleSaveSettings}
                 disabled={setSettingMutation.isPending}
@@ -287,15 +339,29 @@ export default function Settings() {
                     value={newRole}
                     onChange={(e) => setNewRole(e.target.value as UserRole)}
                   >
-                    <option value="user">ลูกหอ</option>
-                    <option value="admin">แอดมิน</option>
+                    <option value="user">ลูกหอ ({tenants.length})</option>
+                    <option value="manager">ผู้จัดการ (Manager)</option>
+                    <option value="admin">แอดมิน (Admin)</option>
                   </select>
                 </div>
               </div>
+              {newRole === "manager" && (
+                <div className="mt-4 p-4 border-2 border-black bg-white grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm font-bold">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" className="w-4 h-4 accent-black" checked={newPermissions.manageRooms} onChange={(e) => setNewPermissions(p => ({ ...p, manageRooms: e.target.checked }))} /> จัดการห้องพัก
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" className="w-4 h-4 accent-black" checked={newPermissions.manageBills} onChange={(e) => setNewPermissions(p => ({ ...p, manageBills: e.target.checked }))} /> บิล/พัสดุ
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" className="w-4 h-4 accent-black" checked={newPermissions.manageSettings} onChange={(e) => setNewPermissions(p => ({ ...p, manageSettings: e.target.checked }))} /> ตั้งค่าหอพัก
+                  </label>
+                </div>
+              )}
               <button
                 className="mt-4 px-5 py-2.5 bg-black text-white font-black uppercase text-sm hover:bg-black/80 disabled:opacity-50"
                 disabled={createUserMutation.isPending || !newName || !newEmail || newPassword.length < 6}
-                onClick={() => createUserMutation.mutate({ name: newName, email: newEmail, password: newPassword, role: newRole })}
+                onClick={() => createUserMutation.mutate({ name: newName, email: newEmail, password: newPassword, role: newRole, permissions: newRole === 'manager' ? newPermissions : undefined })}
               >
                 {createUserMutation.isPending ? "กำลังสร้าง..." : "สร้างบัญชี"}
               </button>
@@ -350,9 +416,9 @@ export default function Settings() {
                         <>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <User className="w-4 h-4 shrink-0" />
+                              {u.role === "manager" ? <Shield className="w-4 h-4 shrink-0 text-orange-500" /> : <ShieldCheck className="w-4 h-4 shrink-0 text-black" />}
                               <span className="font-bold truncate">{u.name || "ไม่ระบุชื่อ"}</span>
-                              <span className="text-xs font-black uppercase px-2 py-0.5 bg-black text-white shrink-0">ADMIN</span>
+                              <span className={`text-xs font-black uppercase px-2 py-0.5 shrink-0 ${u.role === "manager" ? "bg-orange-500 text-white" : u.role === "superadmin" ? "bg-red-600 text-white" : "bg-black text-white"}`}>{u.role}</span>
                             </div>
                             <div className="text-xs font-mono text-muted-foreground mt-1 flex items-center gap-3 flex-wrap">
                               {u.email && (
@@ -374,11 +440,11 @@ export default function Settings() {
                             {u.id !== user?.id && (
                               <>
                                 <button
-                                  onClick={() => handleToggleRole(u.id, u.role)}
+                                  onClick={() => handleToggleRole(u.id, "admin")}
                                   className="p-2 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all"
-                                  title="เปลี่ยนเป็นผู้เช่า"
+                                  title="ลดหรือเปลี่ยนเป็นผู้เช่า"
                                 >
-                                  <Shield className="w-4 h-4" />
+                                  <User className="w-4 h-4" />
                                 </button>
                                 {deleteConfirmId === u.id ? (
                                   <div className="flex gap-1">

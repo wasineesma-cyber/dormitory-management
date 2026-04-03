@@ -1,5 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import BrandMark from "@/components/BrandMark";
+import OnboardingTutorial from "./Onboarding/OnboardingTutorial";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { Building2, FileText, Gauge, Home, LogOut, Menu, Package, Receipt, Settings, Users, X } from "lucide-react";
@@ -155,11 +156,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <BrandMark size="sm" />
             <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-[#d7b56d]">หอพักโปร</span>
           </div>
+          <NotificationsBell />
         </div>
 
         <main className="flex-1 overflow-auto p-4 lg:p-8">
+          <div className="hidden lg:flex justify-end mb-4">
+            <NotificationsBell />
+          </div>
           {children}
         </main>
+        <OnboardingTutorial />
       </div>
     </div>
   );

@@ -12,6 +12,7 @@ import {
   payments, InsertPayment,
   billEditHistory, InsertBillEditHistory,
   settings, InsertSetting,
+  notifications, InsertNotification
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -45,7 +46,8 @@ export async function createHouse(name: string, code?: string) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   const houseCode = code && code.trim() ? code.trim().toLowerCase() : createHouseCode(name);
-  const result = await db.insert(houses).values({ name, code: houseCode } as InsertHouse);
+  const trialEndsAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 days trial as per business model
+  const result = await db.insert(houses).values({ name, code: houseCode, planType: "free", trialEndsAt } as InsertHouse);
   const id = Number((result as any)[0]?.insertId ?? 0);
   if (!id) throw new Error("Failed to create house");
   const created = await db.select().from(houses).where(eq(houses.id, id)).limit(1);
@@ -162,6 +164,16 @@ export async function getAllSettings(houseId: number): Promise<Record<string, st
   return result;
 }
 
+// ─── Super Admin ────────────────────────────────────────────────────────────
+
+export async function getSuperAdminStats() {
+  const db = await getDb();
+  if (!db) return null;
+  const h = await db.select().from(houses);
+  const u = await db.select().from(users);
+  return { housesCount: h.length, usersCount: u.length, houses: h };
+}
+
 // ─── User Management ────────────────────────────────────────────────────────
 
 export async function getAllUsers(houseId?: number) {
@@ -180,13 +192,13 @@ export async function getUserById(id: number) {
   return result[0];
 }
 
-export async function updateUserRole(id: number, role: "admin" | "user") {
+export async function updateUserRole(id: number, role: "admin" | "user" | "manager" | "superadmin", permissions?: any) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
-  await db.update(users).set({ role }).where(eq(users.id, id));
+  await db.update(users).set({ role, permissions: permissions || null }).where(eq(users.id, id));
 }
 
-export async function updateUserInfo(id: number, data: { name?: string | null; email?: string | null }) {
+export async function updateUserInfo(id: number, data: { name?: string | null; email?: string | null; hasCompletedOnboarding?: boolean }) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.update(users).set(data).where(eq(users.id, id));
@@ -556,3 +568,30 @@ export async function getOverdueBills(houseId?: number) {
   if (houseId) conditions.push(eq(bills.houseId, houseId));
   return db.select().from(bills).where(and(...conditions)).orderBy(bills.dueDate);
 }
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+export async function getNotificationsForTenant(tenantId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(notifications).where(eq(notifications.tenantId, tenantId)).orderBy(desc(notifications.createdAt));
+}
+
+export async function createNotification(data: InsertNotification) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  return db.insert(notifications).values(data);
+}
+
+export async function markNotificationAsRead(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(notifications).set({ isRead: true }).where(eq(notifications.id, id));
+}
+
+export async function markAllNotificationsAsRead(tenantId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(notifications).set({ isRead: true }).where(eq(notifications.tenantId, tenantId));
+}
+
