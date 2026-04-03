@@ -272,7 +272,7 @@ export default function Home() {
                     if (authMode === 'login') {
                       localLogin.mutate({ email, password });
                     } else {
-                      registerMutation.mutate({ name: bootstrapName, email, password });
+                      registerMutation.mutate({ name: bootstrapName, houseName: bootstrapName, email, password });
                     }
                   }}
                 >
