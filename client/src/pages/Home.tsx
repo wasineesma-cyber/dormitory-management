@@ -385,6 +385,44 @@ export default function Home() {
           ))}
 
           <div className="mt-4 border-t border-white/10 pt-4">
+            <div className="text-xs font-mono text-[#d7b56d] uppercase tracking-widest mb-3">
+              — ราคาและแพ็กเกจ
+            </div>
+            <div className="grid grid-cols-1 gap-2">
+              <div className="p-3 rounded-xl border border-white/10 bg-white/5 flex justify-between items-center">
+                <div>
+                  <div className="font-black text-sm uppercase">S Starter</div>
+                  <div className="text-[10px] text-white/50 font-mono">สูงสุด 20 ห้อง</div>
+                </div>
+                <div className="text-right">
+                  <span className="font-bold text-white text-sm">149 บ.</span>
+                  <span className="text-[10px] text-white/50 font-mono">/ เดือน</span>
+                </div>
+              </div>
+              <div className="p-3 rounded-xl border border-white/10 bg-white/5 flex justify-between items-center">
+                <div>
+                  <div className="font-black text-sm uppercase">M Growth</div>
+                  <div className="text-[10px] text-white/50 font-mono">สูงสุด 50 ห้อง</div>
+                </div>
+                <div className="text-right">
+                  <span className="font-bold text-white text-sm">299 บ.</span>
+                  <span className="text-[10px] text-white/50 font-mono">/ เดือน</span>
+                </div>
+              </div>
+              <div className="p-3 rounded-xl border border-white/10 bg-white/5 flex justify-between items-center">
+                <div>
+                  <div className="font-black text-sm uppercase">L Pro</div>
+                  <div className="text-[10px] text-white/50 font-mono">สูงสุด 100 ห้อง</div>
+                </div>
+                <div className="text-right">
+                  <span className="font-bold text-white text-sm">6,000 บ.</span>
+                  <span className="text-[10px] text-[#d7b56d] font-mono">/ ปี (คุ้มกว่า)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-2 border-t border-white/10 pt-4">
             <div className="text-xs font-mono text-white/40 uppercase tracking-widest">
               รองรับ 2 ฝั่ง
             </div>
