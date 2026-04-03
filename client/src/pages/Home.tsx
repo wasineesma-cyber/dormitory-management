@@ -18,9 +18,17 @@ export default function Home() {
   const [bootstrapName, setBootstrapName] = useState("");
   const [bootstrapEmail, setBootstrapEmail] = useState("");
   const [bootstrapPassword, setBootstrapPassword] = useState("");
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const localLogin = trpc.auth.localLogin.useMutation({
     onSuccess: () => {
       toast.success("เข้าสู่ระบบสำเร็จ");
+      window.location.reload();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+  const registerMutation = trpc.auth.register.useMutation({
+    onSuccess: () => {
+      toast.success("สร้างบัญชีและหอพักใหม่สำเร็จ! ยินดีต้อนรับครับ 🎉");
       window.location.reload();
     },
     onError: (err) => toast.error(err.message),
@@ -58,7 +66,7 @@ export default function Home() {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.05),transparent_30%),linear-gradient(180deg,#fcfcfc_0%,#f5f5f5_100%)] flex flex-col">
       {/* Hero */}
       <div className="flex-1 flex flex-col lg:flex-row">
-      {/* Left: Big text block + Login buttons */}
+        {/* Left: Big text block + Login buttons */}
         <div className="flex-1 p-8 lg:p-16 flex flex-col justify-center border-r-0 lg:border-r border-black/10">
           <div className="max-w-xl">
             <div className="flex items-center gap-4 mb-8">
@@ -117,9 +125,37 @@ export default function Home() {
                 </div>
               )}
 
-              <div className="rounded-[28px] border border-black/10 p-5 bg-white/95 backdrop-blur-sm space-y-3 shadow-[0_18px_40px_rgba(0,0,0,0.06)]">
-                <div className="text-xs font-mono font-bold uppercase tracking-widest">เข้าสู่ระบบด้วยบัญชีหอพัก</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="rounded-[28px] border border-black/10 p-5 bg-white/95 backdrop-blur-sm space-y-3 shadow-[0_18px_40px_rgba(0,0,0,0.06)] relative overflow-hidden">
+                {/* Ribbon */}
+                <div className="absolute -right-[1.5rem] top-[0.6rem] rotate-45 bg-[#d7b56d] text-white font-black text-[10px] uppercase tracking-widest px-8 py-0.5 shadow-sm">
+                  FREE 90 DAYS
+                </div>
+
+                <div className="flex gap-4 border-b border-black/10 pb-2 mb-3">
+                  <button
+                    className={`text-xs font-mono font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${authMode === 'login' ? 'border-black text-black' : 'border-transparent text-muted-foreground'}`}
+                    onClick={() => setAuthMode('login')}
+                  >
+                    เข้าสู่ระบบ
+                  </button>
+                  <button
+                    className={`text-xs font-mono font-bold uppercase tracking-widest pb-1 border-b-2 transition-colors ${authMode === 'register' ? 'border-[#d7b56d] text-[#d7b56d]' : 'border-transparent text-muted-foreground'}`}
+                    onClick={() => setAuthMode('register')}
+                  >
+                    เปิดตึกใหม่ (ทดลองฟรี 90 วัน)
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  {authMode === 'register' && (
+                    <input
+                      type="text"
+                      className="brut-input"
+                      placeholder="ชื่อ-นามสกุล / ชื่อหอพักของคุณ"
+                      value={bootstrapName}
+                      onChange={(e) => setBootstrapName(e.target.value)}
+                    />
+                  )}
                   <input
                     type="email"
                     className="brut-input"
@@ -135,12 +171,28 @@ export default function Home() {
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
+
+                {authMode === 'register' && (
+                  <p className="text-[11px] font-mono text-muted-foreground text-center">
+                    ทดลองใช้งานฟรี 90 วัน จากนั้นเริ่มเพียง <span className="font-bold text-black border-b border-black">89 บาท/เดือน</span> (ห้องละ 5 บาท)
+                  </p>
+                )}
+
                 <button
-                  className="brut-btn"
-                  disabled={localLogin.isPending || !email || !password}
-                  onClick={() => localLogin.mutate({ email, password })}
+                  className="brut-btn bg-black text-white hover:bg-black/80"
+                  disabled={(authMode === 'login' ? localLogin.isPending : registerMutation.isPending) || !email || !password || (authMode === 'register' && !bootstrapName)}
+                  onClick={() => {
+                    if (authMode === 'login') {
+                      localLogin.mutate({ email, password });
+                    } else {
+                      registerMutation.mutate({ name: bootstrapName, email, password });
+                    }
+                  }}
                 >
-                  {localLogin.isPending ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ (บัญชีที่แอดมินสร้าง)"}
+                  {authMode === 'login'
+                    ? (localLogin.isPending ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบไปยังหอพักของคุณ")
+                    : (registerMutation.isPending ? "กำลังสร้างระบบหอพัก..." : "สมัครสมาชิกและเริ่มทดลองใช้งานฟรี!")
+                  }
                 </button>
               </div>
 
