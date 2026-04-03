@@ -6,6 +6,7 @@ import { Building2, ChevronRight, Gauge, Key, Receipt, Shield, Users, Zap } from
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+import { ArrowRight, Check } from "lucide-react";
 
 export default function Home() {
   const { user, loading, isAuthenticated } = useAuth();
@@ -13,6 +14,21 @@ export default function Home() {
   const adminLoginUrl = getLoginUrl("/dashboard");
   const tenantLoginUrl = getLoginUrl("/portal");
   const bootstrapStatus = trpc.bootstrap.status.useQuery();
+
+  const [showSplash, setShowSplash] = useState(false);
+  const [splashStep, setSplashStep] = useState(0);
+
+  useEffect(() => {
+    if (!localStorage.getItem("hasSeenAppIntro")) {
+      setShowSplash(true);
+    }
+  }, []);
+
+  const completeSplash = () => {
+    setShowSplash(false);
+    localStorage.setItem("hasSeenAppIntro", "true");
+  };
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [bootstrapName, setBootstrapName] = useState("");
@@ -62,8 +78,78 @@ export default function Home() {
     );
   }
 
+  const splashScreens = [
+    {
+      image: "/intro_manager.png",
+      title: "จัดการหอพักง่ายๆ ด้วยปลายนิ้ว",
+      desc: "เจ้าของหอพักจัดการทุกอย่างได้จากที่เดียว ไม่ว่าจะเป็นห้องว่าง สัญญา หรือบิลเรียกเก็บเงิน"
+    },
+    {
+      image: "/intro_tenant.png",
+      title: "ผู้เช่าดูบิลและชำระออนไลน์",
+      desc: "สะดวกสำหรับผู้เช่า ตรวจสอบบิลค่าน้ำค่าไฟ สแกน QR PromptPay แจ้งโอนได้ทันที"
+    },
+    {
+      image: "/intro_success.png",
+      title: "รับฟรี! ทดลองใช้งาน 90 วัน",
+      desc: "ลดภาระงาน เพิ่มความโปร่งใส เริ่มต้นตั้งค่าหอพักของคุณได้ฟรีเลยยาวดุจใจถึง 3 เดือน!"
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.05),transparent_30%),linear-gradient(180deg,#fcfcfc_0%,#f5f5f5_100%)] flex flex-col">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.05),transparent_30%),linear-gradient(180deg,#fcfcfc_0%,#f5f5f5_100%)] flex flex-col relative">
+
+      {showSplash && (
+        <div className="fixed inset-0 z-50 bg-white flex flex-col">
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center mt-12">
+            <div className="w-64 h-64 md:w-96 md:h-96 rounded-[3rem] overflow-hidden mb-8 border-4 border-black/5 shadow-2xl relative">
+              {splashScreens.map((s, i) => (
+                <img
+                  key={i}
+                  src={s.image}
+                  alt={s.title}
+                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${i === splashStep ? "opacity-100" : "opacity-0"}`}
+                />
+              ))}
+            </div>
+            <h2 className="text-3xl md:text-5xl font-black mb-4 tracking-tight transition-all duration-300">
+              {splashScreens[splashStep].title}
+            </h2>
+            <p className="text-muted-foreground text-sm md:text-lg max-w-lg mb-8 font-medium">
+              {splashScreens[splashStep].desc}
+            </p>
+
+            <div className="flex gap-2 mb-12">
+              {splashScreens.map((_, i) => (
+                <div key={i} className={`h-2 rounded-full transition-all duration-300 ${i === splashStep ? "w-8 bg-[#d7b56d]" : "w-2 bg-black/10"}`} />
+              ))}
+            </div>
+          </div>
+
+          <div className="p-8 border-t border-black/10 flex justify-between items-center bg-slate-50/50">
+            <button
+              onClick={completeSplash}
+              className="text-muted-foreground hover:text-black font-bold uppercase tracking-widest text-xs transition-colors"
+            >
+              ข้าม
+            </button>
+            <button
+              onClick={() => {
+                if (splashStep === splashScreens.length - 1) completeSplash();
+                else setSplashStep(prev => prev + 1);
+              }}
+              className="px-8 py-3 bg-black text-white rounded-full font-black uppercase text-sm tracking-widest flex items-center gap-2 hover:bg-black/80 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+            >
+              {splashStep === splashScreens.length - 1 ? (
+                <>เริ่มใช้งาน <Check className="w-4 h-4" /></>
+              ) : (
+                <>ถัดไป <ArrowRight className="w-4 h-4" /></>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Hero */}
       <div className="flex-1 flex flex-col lg:flex-row">
         {/* Left: Big text block + Login buttons */}
