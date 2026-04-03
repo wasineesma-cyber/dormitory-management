@@ -28,8 +28,9 @@ export const stripeWebhookHandler = async (req: express.Request, res: express.Re
         case "checkout.session.completed": {
             const session = event.data.object as Stripe.Checkout.Session;
             if (session.client_reference_id && session.subscription && session.customer) {
+                const planType = session.metadata?.planType || "starter";
                 await db.update(houses).set({
-                    planType: "premium",
+                    planType: planType as any,
                     stripeSubscriptionId: session.subscription as string,
                     stripeCustomerId: session.customer as string,
                     subscriptionStatus: "active",
@@ -40,10 +41,16 @@ export const stripeWebhookHandler = async (req: express.Request, res: express.Re
         case "customer.subscription.updated":
         case "customer.subscription.deleted": {
             const subscription = event.data.object as Stripe.Subscription;
-            await db.update(houses).set({
-                subscriptionStatus: subscription.status,
-                planType: subscription.status === 'active' || subscription.status === 'trialing' ? 'premium' : 'free'
-            }).where(eq(houses.stripeSubscriptionId, subscription.id));
+            if (subscription.status !== 'active' && subscription.status !== 'trialing') {
+                await db.update(houses).set({
+                    subscriptionStatus: subscription.status,
+                    planType: 'free'
+                }).where(eq(houses.stripeSubscriptionId, subscription.id));
+            } else {
+                await db.update(houses).set({
+                    subscriptionStatus: subscription.status
+                }).where(eq(houses.stripeSubscriptionId, subscription.id));
+            }
             break;
         }
     }

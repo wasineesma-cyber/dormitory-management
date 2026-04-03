@@ -251,36 +251,64 @@ export default function Settings() {
               </div>
 
               {/* Subscription Block */}
-              {houseQuery.data && (
-                <div className={`mt-6 p-6 border-4 ${houseQuery.data.planType === 'free' ? 'border-orange-500 bg-orange-50' : 'border-green-600 bg-green-50'}`}>
-                  <h3 className="text-sm font-black uppercase tracking-widest mb-1">
-                    {houseQuery.data.planType === 'free' ? 'แพ็กเกจ ทดลองใช้' : 'แพ็กเกจ PREMIUM'}
-                  </h3>
-                  <div className="text-lg font-bold">
-                    {houseQuery.data.planType === 'free'
-                      ? `เหลือเวลาทดลองใช้ ${Math.max(0, Math.ceil((new Date(houseQuery.data.trialEndsAt || Date.now()).getTime() - Date.now()) / (1000 * 3600 * 24)))} วัน`
-                      : `ขีดจำกัดห้อง: ไม่จำกัด`}
-                  </div>
+              {houseQuery.data && (() => {
+                const plans = [
+                  { id: "starter", name: "S - Starter", limit: 20, price: "1,200 บาท/ปี" },
+                  { id: "growth", name: "M - Growth", limit: 50, price: "3,000 บาท/ปี" },
+                  { id: "pro", name: "L - Pro", limit: 100, price: "6,000 บาท/ปี" },
+                  { id: "unlimited", name: "XL - Unlimited", limit: "ไม่จำกัด", price: "9,900 บาท/ปี" },
+                ];
 
-                  {houseQuery.data.planType === 'free' ? (
-                    <button
-                      onClick={() => checkoutMutation.mutate()}
-                      disabled={checkoutMutation.isPending}
-                      className="mt-4 px-6 py-2 bg-orange-600 text-white font-black uppercase text-sm"
-                    >
-                      {checkoutMutation.isPending ? "กำลังพาดำเนินการ..." : "อัปเกรดเป็นพรีเมียม (เดือนละ 89 บาท)"}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => portalMutation.mutate()}
-                      disabled={portalMutation.isPending}
-                      className="mt-4 px-6 py-2 bg-black text-white font-black uppercase text-sm"
-                    >
-                      {portalMutation.isPending ? "กำลังเปิดพอร์ทัล..." : "จัดการข้อมูลชำระเงิน"}
-                    </button>
-                  )}
-                </div>
-              )}
+                const currentPlan = houseQuery.data.planType;
+                const isTrial = currentPlan === "free";
+
+                return (
+                  <div className="mt-8 border-t-4 border-black pt-8">
+                    <h2 className="text-xl font-black uppercase tracking-tight mb-2">
+                      แพ็กเกจพื้นที่และการชำระเงิน
+                    </h2>
+                    <p className="text-sm font-mono text-muted-foreground mb-6">
+                      เลือกแผนรายปีให้เหมาะสมกับขนาดหอพักของคุณ (ขณะนี้คุณใช้ {isTrial ? 'แพ็กเกจทดลองใช้ (สูงสุด 5 ห้อง)' : 'แพ็กเกจ ' + currentPlan.toUpperCase()})
+                    </p>
+
+                    {isTrial && (
+                      <div className="mb-6 p-4 bg-orange-100 border border-orange-500 text-orange-800 font-medium">
+                        เหลือเวลาทดลองใช้ฟรี {Math.max(0, Math.ceil((new Date(houseQuery.data.trialEndsAt || Date.now()).getTime() - Date.now()) / (1000 * 3600 * 24)))} วัน
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {plans.map((p) => (
+                        <div key={p.id} className={`border-4 p-5 flex flex-col ${currentPlan === p.id ? 'border-green-600 bg-green-50' : 'border-black bg-white hover:-translate-y-1 transition-transform shadow-sm'}`}>
+                          <h3 className="font-black uppercase text-lg">{p.name}</h3>
+                          <p className="text-xs font-mono text-muted-foreground mt-1 mb-4">สูงสุด {p.limit} ห้อง</p>
+                          <div className="font-bold text-xl mb-4 text-[#d7b56d]">{p.price}</div>
+
+                          <div className="mt-auto">
+                            {currentPlan === p.id ? (
+                              <button
+                                onClick={() => portalMutation.mutate()}
+                                disabled={portalMutation.isPending}
+                                className="w-full py-2 bg-green-600 text-white font-black uppercase text-sm outline-none"
+                              >
+                                {portalMutation.isPending ? "กำลังโหลด..." : "จัดการการชำระเงิน"}
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => checkoutMutation.mutate({ planType: p.id as any })}
+                                disabled={checkoutMutation.isPending}
+                                className={`w-full py-2 font-black uppercase text-sm ${currentPlan === p.id ? 'bg-green-600 text-white' : 'bg-black text-white hover:bg-black/80'} outline-none`}
+                              >
+                                เลือกแผนนี้
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
 
               <button
                 onClick={handleSaveSettings}

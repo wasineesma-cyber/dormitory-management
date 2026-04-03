@@ -251,12 +251,21 @@ export const appRouter = router({
       const houseId = requireHouseId(ctx.user);
 
       // Check plan limits
+      const PLAN_LIMITS: Record<string, number> = {
+        free: 5,
+        starter: 20,
+        growth: 50,
+        pro: 100,
+        unlimited: 999999,
+      };
+
       const house = await db.getHouseById(houseId);
-      if (house?.planType === "free") {
-        const rooms = await db.getRooms(houseId);
-        if (rooms.length >= 5) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "คุณใช้งานครบ 5 ห้องสำหรับแพ็กเกจทดลองใช้แล้ว กรุณาอัปเกรดเพื่อเพิ่มห้องพัก" });
-        }
+      const plan = house?.planType || "free";
+      const limit = PLAN_LIMITS[plan] || 5;
+
+      const rooms = await db.getRooms(houseId);
+      if (rooms.length >= limit) {
+        throw new TRPCError({ code: "FORBIDDEN", message: `แพ็กเกจ (${plan}) ของคุณรองรับสูงสุด ${limit} ห้อง กรุณาอัปเกรดเพื่อเพิ่มห้องพัก` });
       }
 
       const cleaned: Record<string, any> = {};
@@ -763,20 +772,32 @@ export const appRouter = router({
 
   // ─── Stripe Subscription ──────────────────────────────────────────────────
   stripe: router({
-    createCheckoutSession: adminProcedure.mutation(async ({ ctx }) => {
+    createCheckoutSession: adminProcedure.input(z.object({
+      planType: z.enum(["starter", "growth", "pro", "unlimited"])
+    })).mutation(async ({ input, ctx }) => {
       const houseId = requireHouseId(ctx.user);
       const house = await db.getHouseById(houseId);
       if (!house) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const PLAN_PRICES: Record<string, string> = {
+        starter: process.env.STRIPE_PRICE_STARTER || "price_placeholder_s",
+        growth: process.env.STRIPE_PRICE_GROWTH || "price_placeholder_m",
+        pro: process.env.STRIPE_PRICE_PRO || "price_placeholder_l",
+        unlimited: process.env.STRIPE_PRICE_UNLIMITED || "price_placeholder_xl",
+      };
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card", "promptpay"],
         mode: "subscription",
         line_items: [
           {
-            price: process.env.STRIPE_PREMIUM_PRICE_ID || "price_placeholder",
+            price: PLAN_PRICES[input.planType],
             quantity: 1,
           },
         ],
+        metadata: {
+          planType: input.planType
+        },
         success_url: `${process.env.PUBLIC_URL || "http://localhost:5173"}/settings?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.PUBLIC_URL || "http://localhost:5173"}/settings`,
         client_reference_id: String(houseId),
