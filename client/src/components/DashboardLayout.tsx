@@ -4,7 +4,7 @@ import OnboardingTutorial from "./Onboarding/OnboardingTutorial";
 import NotificationsBell from "@/components/NotificationsBell";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { Building2, FileText, Gauge, Home, LogOut, Menu, Package, Receipt, Settings, Users, X } from "lucide-react";
+import { Building2, FileText, Gauge, Home, LogOut, Package, Receipt, Settings, Users, X, Wrench } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 
@@ -50,6 +50,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: Package, label: "พัสดุ", path: "/packages" },
     { icon: Gauge, label: "มิเตอร์น้ำ/ไฟ", path: "/meters" },
     { icon: Receipt, label: "บิล", path: "/bills" },
+    { icon: Wrench, label: "แจ้งซ่อม", path: "/maintenance" },
     { icon: FileText, label: "รายงาน", path: "/reports" },
     { icon: Settings, label: "ตั้งค่า", path: "/settings" },
   ];

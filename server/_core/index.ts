@@ -5,6 +5,7 @@ import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerPdfRoutes } from "../pdfExport";
+import { registerUploadRoutes } from "../upload";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -42,6 +43,7 @@ async function startServer() {
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
   registerPdfRoutes(app);
+  registerUploadRoutes(app);
   // tRPC API
   app.use(
     "/api/trpc",

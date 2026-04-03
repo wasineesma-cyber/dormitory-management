@@ -1,7 +1,8 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { Building2, CheckCircle, ChevronRight, Clock, Package, Receipt, X } from "lucide-react";
+import { ContractModal } from "@/components/ContractModal";
+import { Building2, CheckCircle, ChevronRight, Clock, Package, Receipt, PenTool, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -55,6 +56,54 @@ function SlipUploadModal({ bill, onClose }: { bill: any; onClose: () => void }) 
     </div>
   );
 }
+function MaintenanceModal({ onClose }: { onClose: () => void }) {
+  const utils = trpc.useUtils();
+  const [issueType, setIssueType] = useState("ทั่วไป");
+  const [desc, setDesc] = useState("");
+
+  const create = trpc.maintenance.create.useMutation({
+    onSuccess: () => {
+      toast.success("ส่งเรื่องแจ้งซ่อมแล้ว ทางนิติจะรีบดำเนินการให้ค่ะ");
+      utils.maintenance.myList.invalidate();
+      onClose();
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="bg-white border-4 border-black w-full max-w-md shadow-[8px_8px_0px_rgba(0,0,0,0.5)]">
+        <div className="flex items-center justify-between p-6 border-b-4 border-black">
+          <h2 className="text-xl font-black uppercase">แจ้งซ่อมห้องพัก</h2>
+          <button onClick={onClose}><X className="w-6 h-6" /></button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="brut-label">หมวดหมู่ปัญหา</label>
+            <select className="brut-input" value={issueType} onChange={e => setIssueType(e.target.value)}>
+              <option value="ไฟฟ้า">ระบบไฟฟ้า / หลอดไฟ</option>
+              <option value="ประปา">ระบบประปา / น้ำรั่ว</option>
+              <option value="แอร์">เครื่องปรับอากาศ (แอร์)</option>
+              <option value="อินเทอร์เน็ต">อินเทอร์เน็ต</option>
+              <option value="เฟอร์นิเจอร์">เฟอร์นิเจอร์ชำรุด</option>
+              <option value="ทั่วไป">อื่นๆ ทั่วไป</option>
+            </select>
+          </div>
+          <div>
+            <label className="brut-label">อธิบายปัญหาที่พบระบุให้ชัดเจน *</label>
+            <textarea className="brut-input" rows={3} value={desc} onChange={e => setDesc(e.target.value)} placeholder="เช่น หลอดไฟห้องน้ำขาด, แอร์ไม่เย็น..." />
+          </div>
+        </div>
+        <div className="flex gap-3 p-6 border-t-4 border-black">
+          <button onClick={() => create.mutate({ issueType, description: desc })} disabled={create.isPending || !desc} className="brut-btn flex-1">
+            {create.isPending ? "กำลังดำเนินการ..." : "ส่งเรื่องให้เจ้าหน้าที่"}
+          </button>
+          <button onClick={onClose} className="px-6 py-2.5 border-2 border-black font-bold text-sm uppercase hover:bg-gray-100">ยกเลิก</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function TenantPortal() {
   const { user } = useAuth();
@@ -62,7 +111,15 @@ export default function TenantPortal() {
   const { data: myInfo, isLoading: loadingInfo } = trpc.tenants.myInfo.useQuery();
   const { data: bills = [], isLoading: loadingBills } = trpc.bills.list.useQuery({});
   const { data: packages = [], isLoading: loadingPackages } = trpc.packages.myList.useQuery();
+  const { data: contracts = [] } = trpc.contracts.getByTenant.useQuery(
+    { tenantId: myInfo?.id as number },
+    { enabled: !!myInfo?.id }
+  );
+  const { data: maintenanceList = [] } = trpc.maintenance.myList.useQuery();
+
   const [selectedBill, setSelectedBill] = useState<any>(null);
+  const [selectedContract, setSelectedContract] = useState<any>(null);
+  const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
 
   const unpaidBills = bills.filter(b => b.status !== "paid");
   const paidBills = bills.filter(b => b.status === "paid");
@@ -70,7 +127,7 @@ export default function TenantPortal() {
   return (
     <DashboardLayout>
       <div className="mb-8">
-        <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-2">— ยินดีต้อนรับ</div>
+        <div className="text-xs font-mono uppercase tracking-widest text-[#d7b56d] font-bold mb-2">ยินดีต้อนรับเข้าพักที่ {myInfo?.house?.name || "หอพักของเรา"}</div>
         <h1 className="text-4xl font-black uppercase tracking-tighter">
           {user?.name || "ผู้เช่า"}
         </h1>
@@ -112,6 +169,74 @@ export default function TenantPortal() {
           <div className="text-xs font-mono text-muted-foreground mt-1">กรุณาติดต่อเจ้าของหอพัก</div>
         </div>
       )}
+
+      {/* Contracts */}
+      {contracts.length > 0 && (
+        <div className="mb-6">
+          <div className="text-xs font-mono font-bold uppercase tracking-widest mb-3 border-l-4 border-black pl-3">
+            สัญญาเช่า ({contracts.length})
+          </div>
+          <div className="space-y-3">
+            {contracts.map((contract: any) => (
+              <div key={contract.id} className="brut-card-hover flex justify-between items-center bg-gray-50">
+                <div>
+                  <div className="font-bold">สัญญาลงวันที่ {String(contract.createdAt).split("T")[0]}</div>
+                  <div className={`text-xs font-bold uppercase mt-1 ${contract.status === "signed" ? "text-green-700" : "text-[#d7b56d]"}`}>
+                    {contract.status === "signed" ? "เซ็นแล้ว ✓" : "รอการลงนาม"}
+                  </div>
+                </div>
+                <button onClick={() => setSelectedContract(contract)} className="brut-btn p-2 px-4 flex gap-2 w-auto">
+                  <PenTool className="w-4 h-4" /> ดูสัญญา
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Maintenance */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-xs font-mono font-bold uppercase tracking-widest border-l-4 border-black pl-3">
+            ประวัติแจ้งซ่อม ({maintenanceList.length})
+          </div>
+          <button onClick={() => setShowMaintenanceModal(true)} className="px-3 py-1 border-2 border-black text-xs font-bold uppercase hover:bg-black hover:text-white transition-all">
+            + แจ้งซ่อมใหม่
+          </button>
+        </div>
+        {maintenanceList.length === 0 ? (
+          <div className="brut-card text-center py-6 text-sm text-muted-foreground font-bold">
+            ไม่มีประวัติแจ้งซ่อม
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {maintenanceList.map((item: any) => (
+              <div key={item.id} className="brut-card-hover bg-white flex justify-between items-center">
+                <div>
+                  <div className="font-bold flex items-center gap-2">
+                    {item.issueType && <span className="bg-black text-white px-2 py-0.5 text-xs rounded">{item.issueType}</span>}
+                    {item.description}
+                  </div>
+                  <div className="text-xs font-mono text-muted-foreground mt-1">
+                    เมื่อ: {String(item.reportedAt).replace("T", " ").split(".")[0]}
+                  </div>
+                </div>
+                <div>
+                  <span className={`text-xs font-bold px-3 py-1 border-2 ${item.status === 'resolved' ? 'border-green-600 text-green-600' :
+                    item.status === 'in_progress' ? 'border-[#d7b56d] text-[#b4904b]' :
+                      item.status === 'cancelled' ? 'border-red-600 text-red-600' :
+                        'border-black text-black'
+                    }`}>
+                    {item.status === 'resolved' ? 'แก้ไขแล้ว ✓' :
+                      item.status === 'in_progress' ? 'กำลังดำเนินการ' :
+                        item.status === 'cancelled' ? 'ยกเลิก' : 'รอดำเนินการ'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Unpaid bills */}
       <div className="mb-6">
@@ -232,6 +357,8 @@ export default function TenantPortal() {
       )}
 
       {selectedBill && <SlipUploadModal bill={selectedBill} onClose={() => setSelectedBill(null)} />}
+      {selectedContract && <ContractModal contract={selectedContract} onClose={() => setSelectedContract(null)} />}
+      {showMaintenanceModal && <MaintenanceModal onClose={() => setShowMaintenanceModal(false)} />}
     </DashboardLayout>
   );
 }

@@ -13,6 +13,7 @@ import Bills from "./pages/Bills";
 import BillDetail from "./pages/BillDetail";
 import Packages from "./pages/Packages";
 import Reports from "./pages/Reports";
+import Maintenance from "./pages/Maintenance";
 import TenantPortal from "./pages/TenantPortal";
 import TenantBillDetail from "./pages/TenantBillDetail";
 import Settings from "./pages/Settings";
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/bills/:id" component={BillDetail} />
       <Route path="/packages" component={Packages} />
       <Route path="/reports" component={Reports} />
+      <Route path="/maintenance" component={Maintenance} />
       <Route path="/settings" component={Settings} />
       <Route path="/portal" component={TenantPortal} />
       <Route path="/portal/bills/:id" component={TenantBillDetail} />

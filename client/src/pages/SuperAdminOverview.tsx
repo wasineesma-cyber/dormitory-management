@@ -5,12 +5,12 @@ import { ShieldAlert, Users, Building2 } from "lucide-react";
 import { Redirect } from "wouter";
 
 export default function SuperAdminOverview() {
-    const { user, isLoading } = useAuth();
+    const { user, loading } = useAuth();
     const statsQuery = trpc.superadmin.stats.useQuery(undefined, {
         enabled: user?.role === "superadmin",
     });
 
-    if (isLoading) return null;
+    if (loading || statsQuery.isLoading) return null;
     if (!user || user.role !== "superadmin") {
         return <Redirect to="/dashboard" />;
     }

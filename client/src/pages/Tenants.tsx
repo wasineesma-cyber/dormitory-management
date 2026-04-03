@@ -1,6 +1,6 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
-import { Edit2, Phone, Plus, Trash2, User, X } from "lucide-react";
+import { Edit2, Phone, Plus, Trash2, User, X, FileText } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -164,6 +164,39 @@ function TenantForm({ initial, rooms, accounts, onSubmit, onClose, loading }: {
   );
 }
 
+function CreateContractModal({ tenant, onClose }: { tenant: any, onClose: () => void }) {
+  const [terms, setTerms] = useState(`สัญญาเช่าห้องพักสำหรับผู้เช่า: ${tenant.firstName} ${tenant.lastName}\nสัญญานี้ทำขึ้นเพื่อตกลงเงื่อนไขการเช่าห้องพัก...\n\n1. ผู้เช่าตกลงชำระค่าเช่าตรงตามเวลาที่กำหนดในแต่ละรอบบิล\n2. ผู้เช่าต้องรักษากฎระเบียบความสงบเรียบร้อยของหอพัก\n3. เงินประกันจะถูกยึดหากผู้เช่าออกก่อนกำหนดสัญญา\n\nลงชื่อผู้เช่า ..........................................`);
+  const create = trpc.contracts.create.useMutation({
+    onSuccess: () => { toast.success("ร่างสัญญาสำเร็จ ให้ผู้เช่าเข้าสู่ระบบเพื่อเซ็นได้เลย"); onClose(); },
+    onError: (e) => toast.error(e.message)
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="bg-white border-4 border-black w-full max-w-2xl max-h-[90vh] flex flex-col" style={{ boxShadow: "8px 8px 0px rgba(0,0,0,0.5)" }}>
+        <div className="flex items-center justify-between p-6 border-b-4 border-black">
+          <h2 className="text-xl font-black uppercase tracking-tighter">สร้างร่างสัญญาใหม่</h2>
+          <button onClick={onClose}><X className="w-6 h-6" /></button>
+        </div>
+        <div className="p-6 flex-1 overflow-y-auto">
+          <label className="brut-label block mb-2">รายละเอียดสัญญา</label>
+          <textarea
+            className="brut-input font-mono w-full min-h-[300px]"
+            value={terms}
+            onChange={(e) => setTerms(e.target.value)}
+          />
+        </div>
+        <div className="flex gap-3 p-6 border-t-4 border-black">
+          <button onClick={() => create.mutate({ tenantId: tenant.id, roomId: tenant.roomId || 0, termsData: terms })} disabled={create.isPending || !tenant.roomId} className="brut-btn flex-1">
+            {create.isPending ? "กำลังบันทึก..." : "ส่งให้ลูกบ้านลูกบ้านเซ็นผ่านระบบ"}
+          </button>
+          <button onClick={onClose} className="px-6 py-2.5 border-2 border-black font-bold text-sm uppercase hover:bg-gray-100">ยกเลิก</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Tenants() {
   const utils = trpc.useUtils();
   const { data: tenants = [], isLoading } = trpc.tenants.list.useQuery();
@@ -175,6 +208,7 @@ export default function Tenants() {
 
   const [showForm, setShowForm] = useState(false);
   const [editTenant, setEditTenant] = useState<any>(null);
+  const [contractTenant, setContractTenant] = useState<any>(null);
 
   const roomMap = Object.fromEntries(rooms.map(r => [r.id, r]));
 
@@ -226,10 +260,13 @@ export default function Tenants() {
                   )}
                 </div>
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                  <button onClick={() => setEditTenant(tenant)} className="p-2 border-2 border-black hover:bg-black hover:text-white transition-all">
+                  <button onClick={() => setContractTenant(tenant)} title="สร้างสัญญาให้ผู้เช่า" className="p-2 border-2 border-black hover:bg-black hover:text-[#d7b56d] transition-all">
+                    <FileText className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => setEditTenant(tenant)} title="แก้ไขข้อมูล" className="p-2 border-2 border-black hover:bg-black hover:text-white transition-all">
                     <Edit2 className="w-4 h-4" />
                   </button>
-                  <button onClick={() => { if (confirm("ลบผู้เช่านี้?")) deleteTenant.mutate({ id: tenant.id }); }}
+                  <button onClick={() => { if (window.confirm("ลบผู้เช่านี้?")) deleteTenant.mutate({ id: tenant.id }); }}
                     className="p-2 border-2 border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition-all">
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -247,6 +284,7 @@ export default function Tenants() {
         <TenantForm initial={editTenant} rooms={rooms} accounts={accounts.filter((u: any) => u.role === "user")} onSubmit={(data) => updateTenant.mutate({ id: editTenant.id, ...data })}
           onClose={() => setEditTenant(null)} loading={updateTenant.isPending} />
       )}
+      {contractTenant && <CreateContractModal tenant={contractTenant} onClose={() => setContractTenant(null)} />}
     </DashboardLayout>
   );
 }

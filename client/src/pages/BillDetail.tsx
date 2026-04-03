@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle, Download, Edit2, Printer, X, Trash2 } from "luc
 import { useState } from "react";
 import { toast } from "sonner";
 import { useLocation, useParams } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 const asArray = <T,>(value: unknown): T[] => Array.isArray(value) ? (value as T[]) : [];
 const asNumber = (value: unknown) => Number(value ?? 0);
@@ -158,6 +159,51 @@ function EditBillModal({ bill, onClose }: { bill: any; onClose: () => void }) {
   );
 }
 
+function SlipUploadBox({ bill }: { bill: any }) {
+  const [uploading, setUploading] = useState(false);
+  const utils = trpc.useUtils();
+  const attachSlip = trpc.bills.attachSlip.useMutation({
+    onSuccess: () => { toast.success("อัปโหลดสลิปสำเร็จ รอแอดมินตรวจสอบ"); utils.bills.byId.invalidate(); },
+    onError: (e) => toast.error(e.message)
+  });
+
+  const handleUpload = async (e: any) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("slip", file);
+      formData.append("billId", String(bill.id));
+      const res = await fetch("/api/upload-slip", { method: "POST", body: formData });
+      if (!res.ok) throw new Error("อัปโหลดไม่สำเร็จ");
+      const data = await res.json();
+      attachSlip.mutate({ billId: bill.id, slipUrl: data.url });
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setUploading(false);
+      e.target.value = null; // reset
+    }
+  };
+
+  if (bill.pendingSlipUrl) {
+    return (
+      <div className="brut-card mt-4 border-2 border-yellow-400 bg-yellow-50 text-center">
+        <div className="text-sm font-bold text-yellow-800">ส่งสลิปแล้ว ทีมงานกำลังตรวจสอบ ⏳</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="brut-card mt-4 border-2 border-dashed border-gray-400 bg-gray-50 text-center">
+      <div className="text-xs font-mono font-bold uppercase tracking-widest mb-3 text-gray-700">แนบสลิปชำระเงิน</div>
+      <input type="file" accept="image/*" disabled={uploading || attachSlip.isPending} onChange={handleUpload} className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-none file:border-2 file:border-black file:text-sm file:font-black file:uppercase file:cursor-pointer hover:file:bg-gray-100 disabled:opacity-50" />
+      {(uploading || attachSlip.isPending) && <div className="mt-4 text-xs font-bold uppercase animate-pulse">กำลังอัปโหลดรูปภาพ...</div>}
+    </div>
+  );
+}
+
 export default function BillDetail() {
   const params = useParams<{ id: string }>();
   const [, navigate] = useLocation();
@@ -168,6 +214,8 @@ export default function BillDetail() {
   );
   const [showPayment, setShowPayment] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const { user } = useAuth();
+  const isAdmin = user?.role !== "user";
   const utils = trpc.useUtils();
   const deleteBill = trpc.bills.delete.useMutation({
     onSuccess: () => {
@@ -176,6 +224,16 @@ export default function BillDetail() {
       navigate("/bills");
     },
     onError: (err) => toast.error(err.message),
+  });
+
+  const recordPayment = trpc.bills.recordPayment.useMutation({
+    onSuccess: () => { toast.success("ยืนยันรับชำระเงินสำเร็จ"); utils.bills.byId.invalidate(); },
+    onError: (e) => toast.error(e.message)
+  });
+
+  const rejectSlip = trpc.bills.rejectSlip.useMutation({
+    onSuccess: () => { toast.success("ปฏิเสธสลิปแล้ว"); utils.bills.byId.invalidate(); },
+    onError: (e) => toast.error(e.message)
   });
 
   if (isLoading) {
@@ -336,8 +394,37 @@ export default function BillDetail() {
         {/* Right: QR + actions */}
         <div className="space-y-4">
           {/* QR Code */}
-          {bill.promptPayId && (
-            <QRCodeCard bill={bill} />
+          {bill.promptPayId && bill.status !== "paid" && (
+            <>
+              <QRCodeCard bill={bill} />
+              {!isAdmin && <SlipUploadBox bill={bill} />}
+            </>
+          )}
+
+          {/* Admin Slip Approval UI */}
+          {isAdmin && bill.pendingSlipUrl && (
+            <div className="brut-card mt-4 border-4 border-yellow-400 bg-yellow-50 text-center animate-in fade-in">
+              <div className="text-xs font-mono font-bold uppercase tracking-widest mb-3 text-yellow-800">สลิปที่แนบมา (รอยืนยัน)</div>
+              <a href={bill.pendingSlipUrl} target="_blank" rel="noopener noreferrer">
+                <img src={bill.pendingSlipUrl} alt="Pending Slip" className="w-full object-cover border-2 border-black mb-4 mx-auto max-h-96" />
+              </a>
+              <div className="flex gap-2">
+                <button
+                  disabled={recordPayment.isPending || rejectSlip.isPending}
+                  onClick={() => {
+                    if (window.confirm("ยืนยันรับชำระเงินตามสลิปนี้? สลิปนี้จะถูกทำลายอัตโนมัติเมื่อยืนยัน")) {
+                      recordPayment.mutate({ billId: bill.id, amount: String(remaining), paymentMethod: "transfer", notes: "ยืนยันการโอนเงินจากสลิป" });
+                    }
+                  }} className="brut-btn flex-1 bg-green-500 hover:bg-green-600 text-sm">✔ รับยอด</button>
+                <button
+                  disabled={recordPayment.isPending || rejectSlip.isPending}
+                  onClick={() => {
+                    if (window.confirm("ปฏิเสธสลิปนี้? ภาพจะถูกลบทิ้งถาวร")) {
+                      rejectSlip.mutate({ billId: bill.id });
+                    }
+                  }} className="brut-btn-outline flex-1 text-red-600 border-red-600 hover:bg-red-50 text-sm">✖ ปฏิเสธ</button>
+              </div>
+            </div>
           )}
 
           {/* Status summary */}

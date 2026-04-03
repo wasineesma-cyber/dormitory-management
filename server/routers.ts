@@ -378,7 +378,8 @@ export const appRouter = router({
       const tenant = await db.getTenantByUserId(ctx.user.id);
       if (!tenant) return null;
       const room = tenant.roomId ? await db.getRoomById(tenant.roomId) : null;
-      return { ...tenant, room };
+      const house = await db.getHouseById(tenant.houseId);
+      return { ...tenant, room, house };
     }),
     submitPaymentSlip: protectedProcedure.input(z.object({
       billId: z.number(),
@@ -702,7 +703,45 @@ export const appRouter = router({
       slipImageUrl: z.string().optional(),
       notes: z.string().optional(),
     })).mutation(async ({ input, ctx }) => {
+      const bill = await db.getBillById(input.billId);
+      if (bill?.pendingSlipUrl) {
+        try {
+          const filename = bill.pendingSlipUrl.split('/').pop();
+          if (filename) {
+            const fs = await import("fs");
+            const path = await import("path");
+            const slipPath = path.join(process.cwd(), "server", "uploads", "slips", filename);
+            if (fs.existsSync(slipPath)) fs.unlinkSync(slipPath);
+          }
+        } catch (e) { console.error("Error unlinking slip", e); }
+        await db.updateBill(input.billId, { pendingSlipUrl: null } as any, ctx.user.id, ctx.user.name || 'Admin', "Confirmed payment");
+      }
       return db.createPayment({ ...input, amount: input.amount as any, recordedBy: ctx.user.id } as any);
+    }),
+    attachSlip: protectedProcedure.input(z.object({ billId: z.number(), slipUrl: z.string() })).mutation(async ({ input, ctx }) => {
+      const bill = await db.getBillById(input.billId);
+      if (!bill) throw new TRPCError({ code: "NOT_FOUND" });
+      if (ctx.user.role === 'user') {
+        const tenant = await db.getTenantByUserId(ctx.user.id);
+        if (!tenant || bill.tenantId !== tenant.id) throw new TRPCError({ code: "FORBIDDEN" });
+      }
+      return db.updateBill(input.billId, { pendingSlipUrl: input.slipUrl } as any, ctx.user.id, ctx.user.name || 'User', "Attached slip");
+    }),
+    rejectSlip: adminProcedure.input(z.object({ billId: z.number() })).mutation(async ({ input, ctx }) => {
+      const bill = await db.getBillById(input.billId);
+      if (bill?.pendingSlipUrl) {
+        try {
+          const filename = bill.pendingSlipUrl.split('/').pop();
+          if (filename) {
+            const fs = await import("fs");
+            const path = await import("path");
+            const slipPath = path.join(process.cwd(), "server", "uploads", "slips", filename);
+            if (fs.existsSync(slipPath)) fs.unlinkSync(slipPath);
+          }
+        } catch (e) { }
+        await db.updateBill(input.billId, { pendingSlipUrl: null } as any, ctx.user.id, ctx.user.name || 'Admin', "Rejected slip");
+      }
+      return { success: true };
     }),
     edit: adminProcedure.input(z.object({
       billId: z.number(),
@@ -735,6 +774,93 @@ export const appRouter = router({
       await db.deleteBill(input.billId);
       return { success: true };
     }),
+  }),
+
+  // ─── Contracts ──────────────────────────────────────────────────────────────
+  contracts: router({
+    getByTenant: protectedProcedure.input(z.object({ tenantId: z.number() })).query(async ({ input, ctx }) => {
+      if (ctx.user.role === 'user') {
+        const t = await db.getTenantByUserId(ctx.user.id);
+        if (!t || t.id !== input.tenantId) throw new TRPCError({ code: "FORBIDDEN" });
+      }
+      return db.getContractsByTenant(input.tenantId);
+    }),
+    create: adminProcedure.input(z.object({
+      tenantId: z.number(),
+      roomId: z.number(),
+      termsData: z.string(),
+    })).mutation(async ({ input, ctx }) => {
+      return db.createContract({
+        houseId: requireHouseId(ctx.user),
+        tenantId: input.tenantId,
+        roomId: input.roomId,
+        termsData: input.termsData,
+        status: "draft"
+      } as any);
+    }),
+    sign: protectedProcedure.input(z.object({
+      contractId: z.number(),
+      signatureBase64: z.string(),
+    })).mutation(async ({ input, ctx }) => {
+      const contract = await db.getContractById(input.contractId);
+      if (!contract) throw new TRPCError({ code: "NOT_FOUND" });
+      if (ctx.user.role === 'user') {
+        const t = await db.getTenantByUserId(ctx.user.id);
+        if (!t || contract.tenantId !== t.id) throw new TRPCError({ code: "FORBIDDEN", message: "ไม่ใช่สัญญาของคุณ" });
+      }
+      await db.signContract(input.contractId, input.signatureBase64);
+      return { success: true };
+    })
+  }),
+
+  // ─── Maintenance ────────────────────────────────────────────────────────────
+  maintenance: router({
+    create: protectedProcedure.input(z.object({
+      issueType: z.string().optional(),
+      description: z.string(),
+      imageUrl: z.string().optional()
+    })).mutation(async ({ input, ctx }) => {
+      const tenant = await db.getTenantByUserId(ctx.user.id);
+      if (!tenant) throw new TRPCError({ code: "FORBIDDEN" });
+      const roomId = tenant.roomId || 0;
+      if (!roomId) throw new TRPCError({ code: "BAD_REQUEST", message: "ไม่มีข้อมูลห้องพัก" });
+
+      const reqData: any = {
+        houseId: requireHouseId(ctx.user),
+        tenantId: tenant.id,
+        roomId: roomId,
+        issueType: input.issueType,
+        description: input.description,
+        imageUrl: input.imageUrl,
+        status: "pending",
+      };
+      const result = await db.createMaintenanceRequest(reqData);
+
+      // Notify admin
+      await db.createNotification({
+        houseId: requireHouseId(ctx.user),
+        tenantId: null as any,
+        type: "general",
+        title: "แจ้งซ่อมใหม่",
+        message: `รับแจ้งซ่อมใหม่ (${input.issueType || "อื่นๆ"}): ${input.description}`
+      });
+      return result;
+    }),
+    myList: protectedProcedure.query(async ({ ctx }) => {
+      const tenant = await db.getTenantByUserId(ctx.user.id);
+      if (!tenant) return [];
+      return db.getMaintenanceRequestsByTenant(tenant.id);
+    }),
+    list: adminProcedure.query(async ({ ctx }) => {
+      return db.getMaintenanceRequestsByHouse(requireHouseId(ctx.user));
+    }),
+    updateStatus: adminProcedure.input(z.object({
+      id: z.number(),
+      status: z.enum(["pending", "in_progress", "resolved", "cancelled"]),
+      adminNotes: z.string().optional()
+    })).mutation(async ({ input }) => {
+      return db.updateMaintenanceStatus(input.id, input.status, input.adminNotes);
+    })
   }),
 
   // ─── Reports ────────────────────────────────────────────────────────────────

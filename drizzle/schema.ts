@@ -173,6 +173,7 @@ export const bills = mysqlTable("bills", {
   electricityMeterAfter: decimal("electricityMeterAfter", { precision: 10, scale: 2 }),
   electricityUnitsUsed: decimal("electricityUnitsUsed", { precision: 10, scale: 2 }),
   notes: text("notes"),
+  pendingSlipUrl: text("pendingSlipUrl"),
   createdBy: int("createdBy").references(() => users.id),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -260,3 +261,39 @@ export const notifications = mysqlTable("notifications", {
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;
+
+// ตารางสัญญาเช่า
+export const contracts = mysqlTable("contracts", {
+  id: int("id").autoincrement().primaryKey(),
+  houseId: int("houseId").references(() => houses.id).notNull(),
+  tenantId: int("tenantId").references(() => tenants.id).notNull(),
+  roomId: int("roomId").references(() => rooms.id).notNull(),
+  status: mysqlEnum("status", ["draft", "signed", "terminated"]).default("draft").notNull(),
+  signatureUrl: text("signatureUrl"),
+  signedAt: timestamp("signedAt"),
+  termsData: text("termsData"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Contract = typeof contracts.$inferSelect;
+export type InsertContract = typeof contracts.$inferInsert;
+
+// ตารางแจ้งซ่อม (Maintenance Requests)
+export const maintenanceRequests = mysqlTable("maintenance_requests", {
+  id: int("id").autoincrement().primaryKey(),
+  houseId: int("houseId").references(() => houses.id).notNull(),
+  tenantId: int("tenantId").references(() => tenants.id).notNull(),
+  roomId: int("roomId").references(() => rooms.id).notNull(),
+  issueType: varchar("issueType", { length: 100 }), // e.g., "electrical", "plumbing", "other"
+  description: text("description").notNull(),
+  status: mysqlEnum("status", ["pending", "in_progress", "resolved", "cancelled"]).default("pending").notNull(),
+  imageUrl: text("imageUrl"), // Optional picture
+  reportedAt: timestamp("reportedAt").defaultNow().notNull(),
+  resolvedAt: timestamp("resolvedAt"),
+  adminNotes: text("adminNotes"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MaintenanceRequest = typeof maintenanceRequests.$inferSelect;
+export type InsertMaintenanceRequest = typeof maintenanceRequests.$inferInsert;

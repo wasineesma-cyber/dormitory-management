@@ -12,7 +12,9 @@ import {
   payments, InsertPayment,
   billEditHistory, InsertBillEditHistory,
   settings, InsertSetting,
-  notifications, InsertNotification
+  notifications, InsertNotification,
+  contracts, InsertContract,
+  maintenanceRequests, InsertMaintenanceRequest
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -593,5 +595,88 @@ export async function markAllNotificationsAsRead(tenantId: number) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.update(notifications).set({ isRead: true }).where(eq(notifications.tenantId, tenantId));
+}
+
+// ─── Contracts ────────────────────────────────────────────────────────────────
+
+export async function createContract(data: InsertContract) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(contracts).values(data);
+  return result;
+}
+
+export async function getContractsByTenant(tenantId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(contracts)
+    .where(eq(contracts.tenantId, tenantId))
+    .orderBy(desc(contracts.createdAt));
+}
+
+export async function getContractById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(contracts).where(eq(contracts.id, id)).limit(1);
+  return result[0];
+}
+
+export async function signContract(id: number, signatureUrl: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(contracts).set({
+    status: "signed",
+    signatureUrl,
+    signedAt: new Date()
+  }).where(eq(contracts.id, id));
+}
+
+// ─── Maintenance Requests ──────────────────────────────────────────────────────
+
+export async function createMaintenanceRequest(data: InsertMaintenanceRequest) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  return db.insert(maintenanceRequests).values(data);
+}
+
+export async function getMaintenanceRequestsByHouse(houseId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(maintenanceRequests)
+    .where(eq(maintenanceRequests.houseId, houseId))
+    .orderBy(desc(maintenanceRequests.reportedAt));
+}
+
+export async function getMaintenanceRequestsByTenant(tenantId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(maintenanceRequests)
+    .where(eq(maintenanceRequests.tenantId, tenantId))
+    .orderBy(desc(maintenanceRequests.reportedAt));
+}
+
+export async function updateMaintenanceStatus(id: number, status: string, adminNotes?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+
+  const updateData: any = { status };
+  if (adminNotes !== undefined) updateData.adminNotes = adminNotes;
+  if (status === "resolved" || status === "cancelled") {
+    updateData.resolvedAt = new Date();
+  } else {
+    updateData.resolvedAt = null;
+  }
+
+  await db.update(maintenanceRequests).set(updateData).where(eq(maintenanceRequests.id, id));
+}
+
+// ─── Admin Notifications ──────────────────────────────────────────────────────
+
+export async function getAdminNotifications(houseId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(notifications)
+    .where(and(eq(notifications.houseId, houseId), sql`${notifications.tenantId} IS NULL`))
+    .orderBy(desc(notifications.createdAt));
 }
 
