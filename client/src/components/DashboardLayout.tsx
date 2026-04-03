@@ -1,6 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import BrandMark from "@/components/BrandMark";
 import OnboardingTutorial from "./Onboarding/OnboardingTutorial";
+import NotificationsBell from "@/components/NotificationsBell";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { Building2, FileText, Gauge, Home, LogOut, Menu, Package, Receipt, Settings, Users, X } from "lucide-react";
